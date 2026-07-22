@@ -1,26 +1,60 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  * {
+    @apply border-db-border;
+  }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  html {
+    @apply h-full;
+  }
 
-@media (prefers-color-scheme: dark) {
+  body {
+    @apply h-full bg-db-navy text-db-text-primary font-sans antialiased;
+  }
+
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --sidebar-width: 240px;
+    --panel-width: 360px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .glass-card {
+    @apply bg-db-surface/80 backdrop-blur-sm border border-db-border/50 rounded-xl;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-200 hover:bg-db-surface-light/80 hover:border-db-accent/30;
+  }
+
+  .accent-glow {
+    @apply shadow-[0_0_15px_rgba(59,130,246,0.15)];
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #1E2756 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #1E2756;
+    border-radius: 2px;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-db-accent to-blue-400;
+  }
 }
