@@ -1,32 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { riskScores } from "@/lib/data/mockData";
-import { calculateAggregateRisk, getSectorRiskBreakdown } from "@/lib/logic/riskCalculator";
+import { buildRiskData } from "@/lib/data/riskData";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const country = searchParams.get("country");
+  const dimension = searchParams.get("dimension") || "total";
 
   try {
+    const data = buildRiskData();
+
+    // If a specific country is requested
     if (country) {
-      const score = riskScores.find((r) => r.country === country.toUpperCase());
-      if (!score) {
-        return NextResponse.json(
-          { error: "Country not found" },
-          { status: 404 }
-        );
+      const countryData = data.countries.find((c) => c.code === country.toUpperCase());
+      if (!countryData) {
+        return NextResponse.json({ error: "Country not found" }, { status: 404 });
       }
       return NextResponse.json({
-        riskScore: score,
-        breakdown: getSectorRiskBreakdown(score),
+        country: countryData,
+        sectorStress: Object.fromEntries(
+          Object.entries(data.sectorStress).map(([sector, countries]) => [
+            sector,
+            { [country.toUpperCase()]: countries[country.toUpperCase()] },
+          ])
+        ),
+        historicalTrend: data.historicalTrends[country.toUpperCase()] || [],
+        eventHighlights: data.eventHighlights,
         timestamp: new Date().toISOString(),
       });
     }
 
-    const aggregate = calculateAggregateRisk(riskScores);
-
     return NextResponse.json({
-      riskScores,
-      aggregate,
+      ...data,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

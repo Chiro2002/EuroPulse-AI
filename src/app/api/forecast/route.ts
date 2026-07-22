@@ -1,35 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { forecasts } from "@/lib/data/mockData";
-import { generateForecastSummary, groupForecastsByCountry } from "@/lib/logic/forecastEngine";
+import { generateFullForecast } from "@/lib/logic/forecastEngine";
+import { generateForecastNarrative } from "@/lib/ai/agents";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const country = searchParams.get("country");
-  const metric = searchParams.get("metric");
+  const countriesParam = searchParams.get("countries") || "DE,FR,IT,ES,NL";
+  const horizon = searchParams.get("horizon") || "quarterly";
+  const includeNarrative = searchParams.get("narrative") === "true";
 
   try {
-    let filtered = [...forecasts];
+    const countries = countriesParam.split(",").map((c: string) => c.trim().toUpperCase());
+    const data = generateFullForecast(countries);
 
-    if (country) {
-      filtered = filtered.filter((f) => f.country === country.toUpperCase());
+    if (includeNarrative) {
+      data.narrative = await generateForecastNarrative(data);
     }
-    if (metric) {
-      filtered = filtered.filter((f) => f.metric.toLowerCase() === metric.toLowerCase());
-    }
-
-    const summary = generateForecastSummary(forecasts);
-    const groupedByCountry = groupForecastsByCountry(filtered);
 
     return NextResponse.json({
-      forecasts: filtered,
-      summary,
-      groupedByCountry,
+      ...data,
+      horizon,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Forecast API error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch forecasts" },
+      { error: "Failed to generate forecasts" },
       { status: 500 }
     );
   }

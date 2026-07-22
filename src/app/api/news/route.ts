@@ -1,40 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
 import { newsItems } from "@/lib/data/mockData";
-import { filterBySeverity, filterByCountry, filterBySector, sortByDate, getNewsStats } from "@/lib/logic/newsClassifier";
+import { classifyAllNews, rankNews, extractThemes, generateDailySummary, filterByCountry, filterByTopic, filterByTimeframe, filterBySeverityThreshold, sortNews } from "@/lib/logic/newsClassifier";
+import { generateDailyNewsSummary } from "@/lib/ai/agents";
+import type { ClassifiedNews, NewsTheme, NewsAPIResponse } from "@/lib/types";
+
+// Simple in-memory cache
+let cache: { data: NewsAPIResponse; timestamp: number } | null = null;
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const severity = searchParams.get("severity");
-  const country = searchParams.get("country");
-  const sector = searchParams.get("sector");
-  const limit = parseInt(searchParams.get("limit") || "20");
-
   try {
-    let filtered = [...newsItems];
+    const searchParams = request.nextUrl.searchParams;
+    const country = searchParams.get("country");
+    const topic = searchParams.get("topic");
+    const severity = parseInt(searchParams.get("severity") || "1");
+    const timeframe = searchParams.get("timeframe") || "all";
+    const sort = searchParams.get("sort") || "impact";
+    const includeSummary = searchParams.get("summary") === "true";
 
-    if (severity) {
-      filtered = filterBySeverity(filtered, severity.split(","));
-    }
-    if (country) {
-      filtered = filterByCountry(filtered, country);
-    }
-    if (sector) {
-      filtered = filterBySector(filtered, sector);
-    }
-
-    filtered = sortByDate(filtered);
-    
-    if (limit > 0) {
-      filtered = filtered.slice(0, limit);
+    // Check cache
+    if (cache && Date.now() - cache.timestamp < CACHE_TTL && !includeSummary) {
+      const cached = cache.data;
+      let filtered = applyFilters(cached.newsItems, country, topic, severity, timeframe, sort);
+      return NextResponse.json({
+        ...cached,
+        newsItems: filtered,
+        totalCount: filtered.length,
+        cached: true,
+      });
     }
 
-    const stats = getNewsStats(newsItems);
+    // Step 1: Classify all news
+    const classified = classifyAllNews(newsItems);
+
+    // Step 2: Rank by impact
+    const ranked = rankNews(classified);
+
+    // Step 3: Extract themes
+    const themes = extractThemes(ranked);
+
+    // Step 4: Generate daily summary (if requested)
+    const dailySummary = includeSummary
+      ? await generateDailyNewsSummary(ranked.slice(0, 5))
+      : generateDailySummary(ranked.slice(0, 3));
+
+    const response: NewsAPIResponse = {
+      newsItems: ranked,
+      themes,
+      dailySummary,
+      totalCount: ranked.length,
+    };
+
+    // Update cache
+    cache = { data: response, timestamp: Date.now() };
+
+    // Apply filters for response
+    let filtered = applyFilters(response.newsItems, country, topic, severity, timeframe, sort);
 
     return NextResponse.json({
-      news: filtered,
-      stats,
-      total: filtered.length,
-      timestamp: new Date().toISOString(),
+      ...response,
+      newsItems: filtered,
+      totalCount: filtered.length,
+      cached: false,
     });
   } catch (error) {
     console.error("News API error:", error);
@@ -43,4 +72,32 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function applyFilters(
+  items: ClassifiedNews[],
+  country: string | null,
+  topic: string | null,
+  severity: number,
+  timeframe: string,
+  sort: string
+): ClassifiedNews[] {
+  let filtered = [...items];
+
+  if (country && country !== "all") {
+    filtered = filterByCountry(filtered, country);
+  }
+  if (topic && topic !== "all") {
+    filtered = filterByTopic(filtered, topic);
+  }
+  if (severity > 1) {
+    filtered = filterBySeverityThreshold(filtered, severity);
+  }
+  if (timeframe && timeframe !== "all") {
+    filtered = filterByTimeframe(filtered, timeframe);
+  }
+
+  filtered = sortNews(filtered, sort);
+
+  return filtered;
 }

@@ -1,274 +1,242 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   ShieldAlert,
   TrendingUp,
   TrendingDown,
-  Minus,
-  AlertTriangle,
+  Map,
   BarChart3,
-  PieChart,
+  RefreshCw,
+  LayoutGrid,
+  Table2,
+  Eye,
+  Download,
 } from "lucide-react";
-import { riskScores } from "@/lib/data/mockData";
-import { euCountries, countryNames } from "@/lib/data/countries";
-import { getRiskLevel, calculateAggregateRisk, getSectorRiskBreakdown } from "@/lib/logic/riskCalculator";
 import { EuropeMap } from "@/components/shared/EuropeMap";
-import type { RiskScore } from "@/lib/types";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { RiskCountryDeepDive } from "@/components/risk/RiskCountryDeepDive";
+import { SectorHeatmap } from "@/components/risk/SectorHeatmap";
+import { StressTrendChart } from "@/components/risk/StressTrendChart";
+import { CountryRiskTable } from "@/components/risk/CountryRiskTable";
+import { getRiskLevel } from "@/lib/logic/riskCalculator";
+import type { CountryDetail, SectorStressData, HistoricalTrend, RiskDimension, RiskAPIResponse } from "@/lib/types";
 
 export default function RiskPage() {
-  const [selectedCountry, setSelectedCountry] = useState<string>("DE");
-  const [viewMode, setViewMode] = useState<"overview" | "country">("overview");
+  const [data, setData] = useState<RiskAPIResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedCountry, setSelectedCountry] = useState<string>("IT");
+  const [mapDimension, setMapDimension] = useState<RiskDimension>("total");
+  const [viewMode, setViewMode] = useState<"map" | "table">("map");
 
-  const aggregate = useMemo(() => calculateAggregateRisk(riskScores), []);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/risk");
+      const json = await res.json();
+      setData(json);
+    } catch (e) {
+      console.error("Failed to fetch risk data", e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const selectedRiskScore = useMemo(
-    () => riskScores.find((r) => r.country === selectedCountry)!,
-    [selectedCountry]
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const selectedCountryData = useMemo(
+    () => data?.countries.find((c) => c.code === selectedCountry) ?? null,
+    [data, selectedCountry]
   );
 
-  const sectorBreakdown = useMemo(
-    () => (selectedRiskScore ? getSectorRiskBreakdown(selectedRiskScore) : []),
-    [selectedRiskScore]
-  );
+  // Build map data based on selected dimension
+  const mapData = useMemo(() => {
+    if (!data) return {};
+    const md: Record<string, { value: number; color: string }> = {};
+    data.countries.forEach((c) => {
+      const score = mapDimension === "total" ? c.totalRisk : c.breakdown[mapDimension];
+      const level = getRiskLevel(score);
+      md[c.code] = { value: score, color: level.color + "99" };
+    });
+    return md;
+  }, [data, mapDimension]);
 
-  // Build map data
-  const mapData: Record<string, { value: number; color: string }> = {};
-  riskScores.forEach((rs) => {
-    const level = getRiskLevel(rs.total);
-    mapData[rs.country] = { value: rs.total, color: level.color + "99" };
-  });
+  const topInsights = data?.topInsights;
 
-  const sortedByRisk = useMemo(
-    () => [...riskScores].sort((a, b) => b.total - a.total),
-    []
-  );
+  const exportCSV = () => {
+    if (!data) return;
+    const headers = ["Country,Code,Total,Inflation,Energy,Debt,Employment,Housing,Geopolitical,Trend30d\n"];
+    const rows = data.countries.map((c) =>
+      `${c.name},${c.code},${c.totalRisk},${c.breakdown.inflation},${c.breakdown.energy},${c.breakdown.debt},${c.breakdown.employment},${c.breakdown.housing},${c.breakdown.geopolitical},${c.trend30d}`
+    );
+    const csv = headers + rows.join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "eu-risk-data.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (loading) {
+    return <div className="p-6"><LoadingSpinner fullPage text="Loading risk data..." /></div>;
+  }
+
+  if (!data) {
+    return <div className="p-6 flex items-center justify-center min-h-[400px]"><p className="text-db-text-muted">Failed to load data.</p></div>;
+  }
+
+  const mostVulnerable = data.countries.find((c) => c.code === topInsights?.mostVulnerable);
+  const risingFastest = data.countries.find((c) => c.code === topInsights?.risingFastest);
+  const mostStable = data.countries.find((c) => c.code === topInsights?.mostStable);
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-bold text-db-text-primary flex items-center gap-2">
-          <ShieldAlert size={22} className="text-db-warning" />
-          Risk Assessment
-        </h2>
-        <p className="text-sm text-db-text-muted mt-1">
-          Multi-factor risk scores across 10 EU countries with Deutsche Bank exposure overlay
-        </p>
-      </div>
-
-      {/* Aggregate Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-4"
-        >
-          <p className="text-xs text-db-text-muted mb-1">Weighted Avg Risk</p>
-          <p className="text-2xl font-bold text-db-text-primary">{aggregate.weightedByGDP}</p>
-          <p className="text-xs text-db-text-muted">GDP-weighted across EU</p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0, transition: { delay: 0.05 } }}
-          className="glass-card p-4"
-        >
-          <p className="text-xs text-db-text-muted mb-1">Highest Risk</p>
-          <p className="text-2xl font-bold text-db-danger">{aggregate.highest?.total}</p>
-          <p className="text-xs text-db-text-muted">{aggregate.highest ? countryNames[aggregate.highest.country] : ""}</p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
-          className="glass-card p-4"
-        >
-          <p className="text-xs text-db-text-muted mb-1">Lowest Risk</p>
-          <p className="text-2xl font-bold text-db-success">{aggregate.lowest?.total}</p>
-          <p className="text-xs text-db-text-muted">{aggregate.lowest ? countryNames[aggregate.lowest.country] : ""}</p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0, transition: { delay: 0.15 } }}
-          className="glass-card p-4"
-        >
-          <p className="text-xs text-db-text-muted mb-1">Countries at Risk</p>
-          <p className="text-2xl font-bold text-db-warning">
-            {riskScores.filter((r) => r.total >= 60).length}
-          </p>
-          <p className="text-xs text-db-text-muted">Score ≥ 60 (High/Critical)</p>
-        </motion.div>
-      </div>
-
-      {/* Map and Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Map */}
-        <div className="lg:col-span-2">
-          <EuropeMap
-            countryData={mapData}
-            onCountryClick={(code) => {
-              setSelectedCountry(code);
-              setViewMode("country");
-            }}
-            selectedCountry={selectedCountry === selectedCountry ? selectedCountry : null}
-            height={350}
-          />
+    <div className="p-6 space-y-5 animate-fade-in">
+      {/* ============================== */}
+      {/* PAGE HEADER */}
+      {/* ============================== */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-db-text-primary flex items-center gap-2">
+            <ShieldAlert size={22} className="text-db-warning" />
+            Risk & Stress Radar
+          </h1>
+          <p className="text-sm text-db-text-muted mt-1">Multi-dimensional risk analysis across Europe</p>
         </div>
+        <div className="flex items-center gap-2">
+          <button onClick={exportCSV} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-db-surface text-db-text-muted text-xs hover:text-db-text-primary transition-colors">
+            <Download size={12} /> CSV
+          </button>
+          <button onClick={() => fetchData()} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-db-surface text-db-text-muted text-xs hover:text-db-text-primary transition-colors">
+            <RefreshCw size={12} /> Refresh
+          </button>
+        </div>
+      </div>
 
-        {/* Rankings */}
-        <div className="glass-card p-4">
-          <h3 className="text-sm font-semibold text-db-text-primary mb-3">Risk Rankings</h3>
-          <div className="space-y-1">
-            {sortedByRisk.map((rs, i) => {
-              const level = getRiskLevel(rs.total);
-              const country = euCountries.find((c) => c.code === rs.country);
-              return (
-                <motion.button
-                  key={rs.country}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  onClick={() => {
-                    setSelectedCountry(rs.country);
-                    setViewMode("country");
-                  }}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all hover:bg-db-surface ${
-                    selectedCountry === rs.country ? "bg-db-surface ring-1 ring-db-accent/30" : ""
+      {/* ============================== */}
+      {/* TOP KPI ROW */}
+      {/* ============================== */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Most Vulnerable", value: mostVulnerable?.code || "—", subtitle: `${mostVulnerable?.totalRisk || 0}/100`, color: "#EF4444", flag: mostVulnerable?.flag },
+          { label: "Rising Fastest", value: risingFastest?.code || "—", subtitle: `+${risingFastest?.trend30d || 0} pts`, color: "#F59E0B", flag: risingFastest?.flag },
+          { label: "Most Stable", value: mostStable?.code || "—", subtitle: `${mostStable?.totalRisk || 0}/100`, color: "#10B981", flag: mostStable?.flag },
+          { label: "Europe Stress", value: `${topInsights?.europeStressTrend || 0}`, subtitle: "GDP-weighted avg", color: "#3B82F6" },
+        ].map((kpi, i) => (
+          <motion.div
+            key={kpi.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="glass-card p-3"
+          >
+            <p className="text-[10px] text-db-text-muted uppercase tracking-wider mb-1">{kpi.label}</p>
+            <div className="flex items-center gap-2">
+              {kpi.flag && <span className="text-base">{kpi.flag}</span>}
+              <p className="text-xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
+            </div>
+            <p className="text-[10px] text-db-text-muted mt-0.5">{kpi.subtitle}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* ============================== */}
+      {/* MAIN LAYOUT: Map/Table (left) + Country Deep Dive (right) */}
+      {/* ============================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* LEFT COLUMN: Map + Table */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* View Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
+              {(["map", "table"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
+                    viewMode === mode ? "bg-db-accent text-white" : "bg-db-surface text-db-text-muted hover:text-db-text-primary"
                   }`}
                 >
-                  <span className="text-xs font-bold text-db-text-muted w-4">{i + 1}</span>
-                  <span className="text-base">{country?.flag}</span>
-                  <span className="flex-1 text-xs font-medium text-db-text-primary text-left">
-                    {country?.name}
-                  </span>
-                  <span
-                    className="text-xs font-bold px-2 py-0.5 rounded"
-                    style={{ backgroundColor: level.bgColor, color: level.color }}
+                  {mode === "map" ? <Map size={12} /> : <Table2 size={12} />}
+                  {mode === "map" ? "Map View" : "Table View"}
+                </button>
+              ))}
+            </div>
+            {viewMode === "map" && (
+              <div className="flex gap-1">
+                {(["total", "inflation", "energy", "debt", "geopolitical"] as RiskDimension[]).map((dim) => (
+                  <button
+                    key={dim}
+                    onClick={() => setMapDimension(dim)}
+                    className={`px-2 py-0.5 rounded text-[9px] font-medium capitalize transition-all ${
+                      mapDimension === dim ? "bg-db-accent text-white" : "bg-db-surface text-db-text-muted"
+                    }`}
                   >
-                    {rs.total}
-                  </span>
-                  {rs.trend === "up" && <TrendingUp size={12} className="text-db-danger" />}
-                  {rs.trend === "down" && <TrendingDown size={12} className="text-db-success" />}
-                  {rs.trend === "stable" && <Minus size={12} className="text-db-text-muted" />}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Country Detail */}
-      {viewMode === "country" && selectedRiskScore && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-4"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">
-              {euCountries.find((c) => c.code === selectedCountry)?.flag}
-            </span>
-            <div>
-              <h3 className="text-base font-bold text-db-text-primary">
-                {countryNames[selectedCountry]}
-              </h3>
-              <p className="text-xs text-db-text-muted">
-                Risk Score: {selectedRiskScore.total}/100 · Trend: {selectedRiskScore.trend}
-              </p>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: getRiskLevel(selectedRiskScore.total).color }}
-              />
-              <span className="text-sm font-bold" style={{ color: getRiskLevel(selectedRiskScore.total).color }}>
-                {getRiskLevel(selectedRiskScore.total).label}
-              </span>
-            </div>
+                    {dim}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {sectorBreakdown.map((sector) => {
-              const level = getRiskLevel(sector.score);
-              return (
-                <div key={sector.sector} className="glass-card p-3">
-                  <p className="text-[10px] text-db-text-muted mb-1">{sector.sector}</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-db-border rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${sector.score}%`,
-                          backgroundColor: level.color,
-                        }}
-                      />
-                    </div>
-                    <span className="text-xs font-bold" style={{ color: level.color }}>
-                      {sector.score}
-                    </span>
-                  </div>
-                  <p className="text-[9px] text-db-text-muted mt-1">
-                    Weight: {Math.round(sector.weight * 100)}%
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Risk Insights */}
-      <div className="glass-card p-4">
-        <h3 className="text-sm font-semibold text-db-text-primary mb-3 flex items-center gap-2">
-          <BarChart3 size={14} className="text-db-accent" />
-          Risk Insights
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {[
-            {
-              title: "Concentration Risk",
-              description: "Italy (74) and Spain (70) represent 22% of DB's EU exposure with risk scores above 65. Combined €130B exposure requires enhanced monitoring.",
-              severity: "high",
-            },
-            {
-              title: "Geopolitical Exposure",
-              description: "Poland (75 geopolitical score) and Germany (60) face elevated risks from Ukraine conflict proximity and energy supply disruption.",
-              severity: "high",
-            },
-            {
-              title: "Dutch Housing Risk",
-              description: "Netherlands housing score of 75 with €18B mortgage exposure presents a growing concern as prices rise 12% YoY.",
-              severity: "medium",
-            },
-            {
-              title: "Improving Outlook",
-              description: "Ireland (44, trend down), Netherlands (50, trend down), and Austria (50, trend down) show improving risk profiles offering portfolio diversification opportunities.",
-              severity: "low",
-            },
-          ].map((insight, i) => (
+          {/* Map */}
+          {viewMode === "map" && (
             <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="p-3 rounded-lg border-l-2"
-              style={{
-                borderLeftColor:
-                  insight.severity === "high" ? "#EF4444" : insight.severity === "medium" ? "#F59E0B" : "#10B981",
-                backgroundColor:
-                  insight.severity === "high"
-                    ? "rgba(239, 68, 68, 0.05)"
-                    : insight.severity === "medium"
-                    ? "rgba(245, 158, 11, 0.05)"
-                    : "rgba(16, 185, 129, 0.05)",
-              }}
+              key={mapDimension}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
             >
-              <h4 className="text-xs font-semibold text-db-text-primary mb-1">{insight.title}</h4>
-              <p className="text-xs text-db-text-secondary leading-relaxed">{insight.description}</p>
+              <EuropeMap
+                countryData={mapData}
+                onCountryClick={(code) => setSelectedCountry(code)}
+                selectedCountry={selectedCountry}
+                height={400}
+              />
             </motion.div>
-          ))}
+          )}
+
+          {/* Table */}
+          {viewMode === "table" && (
+            <CountryRiskTable
+              countries={data.countries}
+              selectedCountry={selectedCountry}
+              onCountrySelect={setSelectedCountry}
+            />
+          )}
+
+          {/* Country Risk Table (always visible below map) */}
+          {viewMode === "map" && (
+            <CountryRiskTable
+              countries={data.countries}
+              selectedCountry={selectedCountry}
+              onCountrySelect={setSelectedCountry}
+            />
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: Country Deep Dive */}
+        <div className="lg:col-span-2">
+          <div className="sticky top-20">
+            {selectedCountryData ? (
+              <RiskCountryDeepDive country={selectedCountryData} />
+            ) : (
+              <div className="glass-card p-4 text-center">
+                <p className="text-sm text-db-text-muted">Select a country to view details</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* ============================== */}
+      {/* SECTOR STRESS HEATMAP */}
+      {/* ============================== */}
+      <SectorHeatmap sectorStress={data.sectorStress} countries={data.countries} />
+
+      {/* ============================== */}
+      {/* STRESS TREND CHART */}
+      {/* ============================== */}
+      <StressTrendChart historicalTrends={data.historicalTrends} countries={data.countries} />
     </div>
   );
 }
