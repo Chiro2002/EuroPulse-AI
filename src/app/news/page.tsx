@@ -176,7 +176,7 @@ export default function NewsPage() {
   const uniqueCountries = [...new Set(allNews.flatMap((n) => n.affectedCountries))].length;
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>
@@ -205,68 +205,88 @@ export default function NewsPage() {
         </div>
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div className="card p-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[140px]">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary" />
-            <input
-              type="text"
-              placeholder="Search news..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 border border-border rounded-lg pl-8 pr-2 h-8 text-xs text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary/40 transition-colors"
-            />
-          </div>
+      {/* ── Filter Bar ── */}        <div className="card p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[140px] max-w-[260px]">
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <input
+                type="text"
+                placeholder="Search news..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-50 border border-border rounded-lg pl-8 pr-2 h-8 text-xs text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary/40 transition-colors"
+              />
+            </div>
 
-          {/* Country */}
-          <div className="relative">
-            <select
-              value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
-              className="appearance-none bg-gray-50 border border-border rounded-lg px-2.5 h-8 pr-6 text-xs text-text-primary focus:outline-none focus:border-primary/40 transition-colors cursor-pointer"
-            >
-              <option value="all">All Countries</option>
-              {euCountries.map((c) => (
-                <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
-              ))}
-            </select>
-            <Globe size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
-          </div>
-
-          {/* Topic chips */}
-          <div className="hidden md:flex items-center gap-1">
-            {topics.slice(0, 4).map((topic) => (
-              <button
-                key={topic}
-                onClick={() => { setSelectedTopic(topic); setSelectedEventId(null); }}
-                className={`px-2 h-7 rounded-lg text-[10px] font-medium transition-all whitespace-nowrap ${
-                  selectedTopic === topic
-                    ? "text-white shadow-sm"
-                    : "text-text-secondary hover:text-text-primary bg-gray-50"
-                }`}
-                style={selectedTopic === topic ? { backgroundColor: topicColors[topic] || "#0018A8" } : {}}
+            {/* Country */}
+            <div className="relative">
+              <select
+                value={selectedCountry}
+                onChange={(e) => setSelectedCountry(e.target.value)}
+                className="appearance-none bg-gray-50 border border-border rounded-lg px-2.5 h-8 pr-6 text-xs text-text-primary focus:outline-none focus:border-primary/40 transition-colors cursor-pointer"
               >
-                {topicLabels[topic]}
-              </button>
-            ))}
-          </div>
+                <option value="all">All Countries</option>
+                {euCountries.map((c) => (
+                  <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+                ))}
+              </select>
+              <Globe size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+            </div>
 
-          {/* More filters toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-1 px-2.5 h-8 rounded-lg text-[10px] font-medium transition-all border ${
-              hasActiveFilters
-                ? "bg-primary/10 text-primary border-primary/20"
-                : "text-text-secondary hover:text-text-primary bg-gray-50 border-border"
-            }`}
-          >
-            <SlidersHorizontal size={11} />
-            Filters
-            {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-          </button>
-        </div>
+            {/* Topic chips - scrollable on mobile */}
+            <div className="hidden sm:flex items-center gap-1 overflow-x-auto scrollbar-thin flex-1 lg:flex-none">
+              {topics.map((topic) => (
+                <button
+                  key={topic}
+                  onClick={() => { setSelectedTopic(topic); setSelectedEventId(null); }}
+                  className={`px-2 h-7 rounded-lg text-[10px] font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                    selectedTopic === topic
+                      ? "text-white shadow-sm"
+                      : "text-text-secondary hover:text-text-primary bg-gray-50"
+                  }`}
+                  style={selectedTopic === topic ? { backgroundColor: topicColors[topic] || "#0018A8" } : {}}
+                >
+                  {topicLabels[topic]}
+                </button>
+              ))}
+            </div>
+
+            {/* More filters toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-1 px-2.5 h-8 rounded-lg text-[10px] font-medium transition-all border ${
+                hasActiveFilters
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : "text-text-secondary hover:text-text-primary bg-gray-50 border-border"
+              }`}
+            >
+              <SlidersHorizontal size={11} />
+              Filters
+              {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+            </button>
+
+            {/* Mobile topic scroll (sm:hidden) */}
+            <div className="sm:hidden overflow-x-auto scrollbar-thin flex-1">
+              <div className="flex items-center gap-1 min-w-fit">
+                {topics.slice(0, 3).map((topic) => (
+                  <button
+                    key={topic}
+                    onClick={() => { setSelectedTopic(topic); setSelectedEventId(null); }}
+                    className={`px-2 h-7 rounded-lg text-[10px] font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      selectedTopic === topic
+                        ? "text-white shadow-sm"
+                        : "text-text-secondary hover:text-text-primary bg-gray-50"
+                    }`}
+                    style={selectedTopic === topic ? { backgroundColor: topicColors[topic] || "#0018A8" } : {}}
+                  >
+                    {topicLabels[topic]}
+                  </button>
+                ))}
+                <span className="text-[8px] text-text-secondary px-1 flex-shrink-0">+ more</span>
+              </div>
+            </div>
+          </div>
 
         {/* Expanded filters */}
         {showFilters && (
@@ -380,9 +400,8 @@ export default function NewsPage() {
             </div>
           )}
 
-          {/* Pagination */}
-          {!loading && filteredNews.length > 0 && (
-            <div className="flex items-center justify-between pt-2">
+          {/* Pagination */}            {!loading && filteredNews.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between pt-2 gap-2">
               <p className="text-[10px] text-text-secondary">
                 Page {currentPage} of {totalPages} · {filteredNews.length} events
               </p>
@@ -394,19 +413,40 @@ export default function NewsPage() {
                 >
                   ← Prev
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                {/* Show first, last, and nearby pages - overflow on many pages */}
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                  const page = start + i;
+                  if (page > totalPages) return null;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-7 h-7 rounded-lg text-[10px] font-medium transition-all ${
+                        page === currentPage
+                          ? "bg-primary text-white shadow-sm"
+                          : "bg-white border border-border text-text-secondary hover:text-text-primary"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                {totalPages > 5 && currentPage < totalPages - 2 && (
+                  <span className="text-[10px] text-text-secondary px-1">...</span>
+                )}
+                {totalPages > 5 && (
                   <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => setCurrentPage(totalPages)}
                     className={`w-7 h-7 rounded-lg text-[10px] font-medium transition-all ${
-                      page === currentPage
+                      totalPages === currentPage
                         ? "bg-primary text-white shadow-sm"
                         : "bg-white border border-border text-text-secondary hover:text-text-primary"
                     }`}
                   >
-                    {page}
+                    {totalPages}
                   </button>
-                ))}
+                )}
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
@@ -484,7 +524,7 @@ export default function NewsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 backdrop-blur-sm overflow-y-auto py-8"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm overflow-y-auto p-4"
             onClick={() => setSelectedEventId(null)}
           >
             <motion.div

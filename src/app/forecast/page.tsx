@@ -140,7 +140,7 @@ export default function ForecastPage() {
   // ── Loading State ────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="p-6 space-y-5 animate-fade-in">
+      <div className="p-4 sm:p-6 space-y-5 animate-fade-in">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export default function ForecastPage() {
             <Skeleton className="w-24 h-7 rounded-lg" />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => <SkeletonForecastCard key={i} />)}
         </div>
         <SkeletonKPIInsight />
@@ -165,7 +165,7 @@ export default function ForecastPage() {
 
   if (!data) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
+      <div className="p-4 sm:p-6 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
         <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center">
           <TrendingUp size={22} className="text-amber-500" />
         </div>
@@ -193,7 +193,7 @@ export default function ForecastPage() {
   }
 
   return (
-    <div className="p-6 space-y-5 animate-fade-in">
+    <div className="p-4 sm:p-6 space-y-5 animate-fade-in">
       {/* ═══════════════════════════════════════════════════════════════
           HEADER + CONTROLS
       ════════════════════════════════════════════════════════════════ */}
@@ -280,7 +280,7 @@ export default function ForecastPage() {
 
         {/* Right: Forecast Intelligence Sidebar */}
         <div className="lg:col-span-2">
-          <div className="sticky top-20 space-y-3">
+          <div className="lg:sticky lg:top-20 space-y-3">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

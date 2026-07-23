@@ -21,11 +21,12 @@ export async function GET() {
   const dataSources: string[] = [];
 
   try {
-    // ── 1. Fetch real data from live APIs, but race against a 4s timeout ─
+    // ── 1. Fetch real data from live APIs, but race against an 8s timeout ─
+    //     8s is generous for 7 parallel fetches (ECB, EUR/USD, Yahoo×2, Inflation, GDELT)
     const liveData = await Promise.race([
       dataFetcher.fetchDashboardData(),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Dashboard data fetch timed out (>4s)")), 4000)
+        setTimeout(() => reject(new Error("Dashboard data fetch timed out (>8s)")), 8000)
       ),
     ]);
     

@@ -185,9 +185,9 @@ class DataFetcher {
       "news",
       async () => {
         const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&format=json&timespan=${hours}h&maxrecords=5`;
-        // Use AbortController with longer timeout (10s) to accommodate GDELT latency
+        // Use AbortController with 5s timeout — GDELT can be slow but 5s is enough
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
+        const timeout = setTimeout(() => controller.abort(), 5000);
         try {
           const res = await fetch(url, { signal: controller.signal });
           if (!res.ok) throw new Error(`GDELT returned ${res.status}`);

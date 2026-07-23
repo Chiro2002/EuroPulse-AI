@@ -136,7 +136,7 @@ export default function SimulatorPage() {
   }, [actions]);
 
   return (
-    <div className="p-6 space-y-5 animate-fade-in">
+    <div className="p-4 sm:p-6 space-y-5 animate-fade-in">
       {/* ═══════════════════════════════════════════════════════════════
           PAGE HEADER
       ════════════════════════════════════════════════════════════════ */}
@@ -181,7 +181,7 @@ export default function SimulatorPage() {
           {/* Preset Scenarios */}
           <div className="card p-5">
             <h2 className="text-sm font-bold text-text-primary mb-4">Preset Scenarios</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               {sortedScenarios.map((scenario) => (
                 <motion.button
                   key={scenario.id}
@@ -349,7 +349,7 @@ export default function SimulatorPage() {
 
               {/* Right: 2 columns — Action Sidebar */}
               <div className="lg:col-span-2">
-                <div className="sticky top-20 space-y-3">
+                <div className="lg:sticky lg:top-20 space-y-3">
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}

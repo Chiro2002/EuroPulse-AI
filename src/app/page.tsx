@@ -202,7 +202,7 @@ export default function DashboardPage() {
   // ─── Loading ──────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="p-6 space-y-4 animate-fade-in">
+      <div className="p-4 sm:p-6 space-y-4 animate-fade-in">
         <div className="card p-4">
           <div className="flex items-center gap-3">
             <Skeleton className="w-9 h-9 rounded-xl" />
@@ -228,7 +228,7 @@ export default function DashboardPage() {
 
   if (!data) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
+      <div className="p-4 sm:p-6 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
         <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center">
           <AlertTriangle size={22} className="text-amber-500" />
         </div>
@@ -264,12 +264,12 @@ export default function DashboardPage() {
   const stress = data.keyMetrics.find(m => m.label === "Stress Score");
 
   return (
-    <div className="p-6 space-y-4 animate-fade-in">
+    <div className="p-4 sm:p-6 space-y-4 animate-fade-in">
       {/* ── Tiny status bar ── */}
-      <div className="flex items-center justify-between text-[10px] text-text-secondary">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between text-[10px] text-text-secondary gap-1">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="flex items-center gap-1"><Clock size={10} />{new Date((data as any).timestamp || Date.now()).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} CET</span>
-          <span><Database size={10} className="inline mr-1" />{(data as any).dataFreshness?.sourcesQueried || 0} sources</span>
+          <span className="hidden sm:inline"><Database size={10} className="inline mr-1" />{(data as any).dataFreshness?.sourcesQueried || 0} sources</span>
           {(data as any).warning && <span className="text-amber-600"><AlertTriangle size={10} className="inline mr-1" />Fallback mode</span>}
         </div>
         <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── 1. KEY METRICS — 4 tiles at top ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {ecb && <MetricTile label={ecb.label} value={ecb.value} trend={ecb.trend} subtitle={ecb.change} />}
         {eurusd && <MetricTile label={eurusd.label} value={eurusd.value} trend={eurusd.trend} subtitle="Live ECB ref. rate" />}
         {infl && <MetricTile label={infl.label} value={infl.value} trend={infl.trend} subtitle={infl.change} />}

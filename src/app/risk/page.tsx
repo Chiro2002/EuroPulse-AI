@@ -88,8 +88,8 @@ export default function RiskPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-4">
-        <div className="flex items-start justify-between">
+      <div className="p-4 sm:p-6 space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="space-y-1">
             <SkeletonLine width="w-48" height="h-5" />
             <SkeletonLine width="w-64" height="h-3" />
@@ -123,7 +123,7 @@ export default function RiskPage() {
 
   if (!data) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
+      <div className="p-4 sm:p-6 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
         <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center">
           <ShieldAlert size={22} className="text-amber-500" />
         </div>
@@ -153,9 +153,9 @@ export default function RiskPage() {
   const dimensions: RiskDimension[] = ["total", "inflation", "energy", "debt", "geopolitical"];
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       {/* ── Page Header ── */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-bold text-text-primary flex items-center gap-2">
             <ShieldAlert size={18} className="text-[#F5A623]" />
@@ -178,13 +178,14 @@ export default function RiskPage() {
         {/* Left Column — Map + Table together */}
         <div className="lg:col-span-3 space-y-3">
           {/* Dimension selector */}
-          <div className="flex items-center justify-end">
-            <div className="flex gap-1">
+          <div className="flex flex-wrap items-center justify-end gap-1">
+            <span className="text-[9px] text-text-secondary mr-1">View:</span>
+            <div className="flex gap-1 flex-wrap">
               {dimensions.map((dim) => (
                 <button
                   key={dim}
                   onClick={() => setMapDimension(dim)}
-                  className={`px-2 py-0.5 rounded text-[9px] font-medium capitalize transition-all ${
+                  className={`px-2 py-0.5 rounded text-[9px] font-medium capitalize transition-all whitespace-nowrap ${
                     mapDimension === dim ? "bg-primary text-white" : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
@@ -218,7 +219,7 @@ export default function RiskPage() {
 
         {/* Right Column: Country Deep Dive */}
         <div className="lg:col-span-2">
-          <div className="sticky top-20">
+          <div className="lg:sticky lg:top-20">
             {selectedCountryData ? (
               <RiskCountryDeepDive country={selectedCountryData} />
             ) : (

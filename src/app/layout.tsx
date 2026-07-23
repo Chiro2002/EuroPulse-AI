@@ -112,6 +112,7 @@ export default function RootLayout({
         </div>
 
         {/* Right Sidebar Panel — 320px fixed width, slide in/out */}
+        {/* Hidden on mobile (< lg) - use panel toggle only on desktop */}
         {/* Hidden on forecast and simulator pages — they have their own built-in sidebars */}
         <AnimatePresence initial={false}>
           {panelOpen && currentPage !== "forecast" && currentPage !== "simulator" && (
@@ -121,16 +122,47 @@ export default function RootLayout({
               animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{
-                duration: 0.25,
+                duration: 0.3,
                 ease: [0.25, 0.1, 0.25, 1],
               }}
-              className="overflow-hidden flex-shrink-0 border-l border-gray-200/80"
+              className="hidden lg:block overflow-hidden flex-shrink-0 border-l border-gray-200/80"
             >
-              <DBImpactPanel
-                insight={sidebarInsight}
-                loading={insightLoading}
-                currentPage={currentPage}
-              />
+              <div className="w-[320px] h-full">
+                <DBImpactPanel
+                  insight={sidebarInsight}
+                  loading={insightLoading}
+                  currentPage={currentPage}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile sidebar overlay */}
+        <AnimatePresence>
+          {panelOpen && currentPage !== "forecast" && currentPage !== "simulator" && (
+            <motion.div
+              key="mobile-sidebar-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm lg:hidden"
+              onClick={() => setPanelOpen(false)}
+            >
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-0 bottom-0 w-[320px] max-w-[85vw]"
+              >
+                <DBImpactPanel
+                  insight={sidebarInsight}
+                  loading={insightLoading}
+                  currentPage={currentPage}
+                />
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

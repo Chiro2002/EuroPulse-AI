@@ -15,11 +15,12 @@ import {
   User,
   PanelRightClose,
   PanelRightOpen,
-  Search,
   ChevronDown,
   LogOut,
   Settings,
   HelpCircle,
+  Menu,
+  X,
 } from "lucide-react";
 
 interface TopBarProps {
@@ -80,8 +81,7 @@ export function TopBar({
   const [showAlerts, setShowAlerts] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Live clock
   useEffect(() => {
@@ -123,37 +123,37 @@ export function TopBar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
 
-  const handleSearch = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && searchQuery.trim()) {
-      router.push(`/news?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery("");
-    }
-  };
+
 
   return (
     <header
-      className={`h-14 flex items-center justify-between px-5 flex-shrink-0 relative z-40 transition-all duration-300 ${
+      className={`h-14 flex items-center justify-between px-3 sm:px-5 flex-shrink-0 relative z-40 transition-all duration-300 ${
         scrolled
           ? "bg-white/80 backdrop-blur-xl border-b border-border shadow-sm"
           : "bg-white border-b border-border"
       }`}
     >
       {/* LEFT: Logo + Nav */}
-      <div className="flex items-center gap-6 flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-6 flex-shrink-0">
         {/* EuroPulse AI Logo with stylized Z */}
         <button
           onClick={() => router.push("/")}
-          className="flex items-center gap-2.5 group"
+          className="flex items-center gap-2 group"
         >
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm shadow-primary/20 group-hover:shadow-primary/30 transition-all duration-300 group-hover:scale-105">
             <ZLogo />
           </div>
-          <div className="flex items-baseline gap-1">
+          <div className="hidden sm:flex items-baseline gap-1">
             <span className="text-sm font-bold text-text-primary tracking-tight">
               EuroPulse
             </span>
@@ -164,10 +164,10 @@ export function TopBar({
         </button>
 
         {/* Vertical divider */}
-        <div className="w-px h-6 bg-border/60" />
+        <div className="hidden sm:block w-px h-6 bg-border/60" />
 
-        {/* Navigation */}
-        <nav className="flex items-center gap-1">
+        {/* Desktop Navigation - labels hidden on md screens, full on lg+ */}
+        <nav className="hidden md:flex items-center gap-0.5">
           {navItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
@@ -175,7 +175,7 @@ export function TopBar({
               <button
                 key={item.href}
                 onClick={() => router.push(item.href)}
-                className={`relative flex items-center gap-1.5 px-3 h-8 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                className={`relative flex items-center gap-1.5 px-2 lg:px-3 h-8 rounded-lg text-sm font-medium transition-all duration-200 group ${
                   active
                     ? "text-primary"
                     : "text-[#4A5568] hover:text-text-primary hover:bg-surface-hover"
@@ -189,7 +189,7 @@ export function TopBar({
                       : "text-[#4A5568]/60 group-hover:text-text-secondary"
                   }`}
                 />
-                <span className="relative">
+                <span className="hidden lg:inline relative">
                   {item.label}
                   {/* Micro-glow on hover */}
                   <span
@@ -211,40 +211,25 @@ export function TopBar({
             );
           })}
         </nav>
+
+        {/* Mobile menu toggle (md:hidden) */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-1.5 rounded-lg hover:bg-surface-hover transition-colors"
+          aria-label="Toggle navigation menu"
+        >
+          {mobileMenuOpen ? (
+            <X size={18} className="text-text-primary" />
+          ) : (
+            <Menu size={18} className="text-text-primary" />
+          )}
+        </button>
       </div>
 
-      {/* RIGHT: Search, Time, Alerts, User Avatar, Panel Toggle */}
-      <div className="flex items-center gap-1.5">
-        {/* Search */}
-        <div className="relative">
-          <div
-            className={`flex items-center gap-1.5 px-2.5 h-8 rounded-lg border transition-all duration-200 ${
-              searchFocused
-                ? "border-primary/40 bg-white w-52 shadow-sm"
-                : "border-border bg-surface-hover w-36 hover:border-gray-300 cursor-pointer"
-            }`}
-          >
-            <Search size={13} className="text-[#4A5568]/50 flex-shrink-0" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              onKeyDown={handleSearch}
-              className="bg-transparent border-none outline-none text-xs text-text-primary placeholder:text-[#4A5568]/40 w-full"
-            />
-            {searchFocused && (
-              <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium text-[#4A5568]/50 bg-gray-100 border border-gray-200">
-                ⌘K
-              </kbd>
-            )}
-          </div>
-        </div>
-
+      {/* RIGHT: Time, Alerts, User Avatar, Panel Toggle */}
+      <div className="flex items-center gap-1">
         {/* Time */}
-        <div className="hidden lg:block text-xs font-mono text-[#4A5568]/60 tabular-nums px-2">
+        <div className="hidden xl:block text-xs font-mono text-[#4A5568]/60 tabular-nums px-1.5">
           {currentTime}
         </div>
 
@@ -402,10 +387,10 @@ export function TopBar({
           </AnimatePresence>
         </div>
 
-        {/* Panel Toggle */}
+        {/* Panel Toggle - hidden on mobile */}
         <button
           onClick={onTogglePanel}
-          className="relative p-1.5 rounded-lg hover:bg-surface-hover transition-colors group ml-1"
+          className="hidden sm:flex relative p-1.5 rounded-lg hover:bg-surface-hover transition-colors group ml-0.5"
           title={panelOpen ? "Close insight panel" : "Open insight panel"}
         >
           {panelOpen ? (
@@ -415,6 +400,41 @@ export function TopBar({
           )}
         </button>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-0 right-0 bg-white border-b border-border shadow-lg overflow-hidden md:hidden z-50"
+          >
+            <div className="p-2 space-y-0.5">
+              {navItems.map((item) => {
+                const active = isActive(item.href);
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => router.push(item.href)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      active
+                        ? "bg-primary/5 text-primary"
+                        : "text-[#4A5568] hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon size={16} className={active ? "text-primary" : "text-[#4A5568]/60"} />
+                    {item.label}
+                    {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
