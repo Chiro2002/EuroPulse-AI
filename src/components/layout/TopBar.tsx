@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   TrendingUp,
   Beaker,
+  Gavel,
   Bell,
   BellDot,
   Circle,
@@ -35,6 +36,7 @@ const navItems = [
   { href: "/news", label: "News", icon: Newspaper },
   { href: "/risk", label: "Risk Radar", icon: ShieldAlert },
   { href: "/forecast", label: "Forecast", icon: TrendingUp },
+  { href: "/boardroom", label: "Boardroom", icon: Gavel },
   { href: "/simulator", label: "Simulator", icon: Beaker },
 ];
 
@@ -316,76 +318,6 @@ export function TopBar({
 
         {/* Divider */}
         <div className="w-px h-5 bg-gray-200/60 mx-1" />
-
-        {/* User Avatar with Dropdown */}
-        <div className="relative" data-user-menu>
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 p-1 pr-2 rounded-lg hover:bg-surface-hover transition-colors group"
-          >
-            {/* Suited man placeholder — professional headshot */}
-            <div className="w-7 h-7 rounded-full overflow-hidden border border-gray-200 shadow-sm">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face"
-                alt="John Doe"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  (e.target as HTMLImageElement).parentElement!.classList.add('bg-gradient-to-br', 'from-primary', 'to-accent', 'flex', 'items-center', 'justify-center');
-                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-white text-[10px] font-bold">JD</span>';
-                }}
-              />
-            </div>
-            <div className="hidden lg:block text-left">
-              <p className="text-xs font-medium text-text-primary leading-tight">John Doe</p>
-              <p className="text-[9px] text-[#4A5568]/60 leading-tight">Senior Analyst</p>
-            </div>
-            <ChevronDown size={11} className="text-[#4A5568]/40 hidden lg:block transition-transform duration-200 group-hover:rotate-180" />
-          </button>
-
-          {/* User Dropdown */}
-          <AnimatePresence>
-            {showUserMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl border border-gray-200 shadow-dropdown z-50"
-              >
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-text-primary">John Doe</p>
-                  <p className="text-xs text-[#4A5568]/60">john.doe@db.com</p>
-                  <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/5 border border-primary/10">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                    <span className="text-[9px] font-medium text-primary">Senior Analyst</span>
-                  </div>
-                </div>
-                <div className="p-1">
-                  {[
-                    { icon: User, label: "Profile" },
-                    { icon: Settings, label: "Settings" },
-                    { icon: HelpCircle, label: "Help & Support" },
-                  ].map((item, i) => (
-                    <button
-                      key={i}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-[#4A5568] hover:text-text-primary hover:bg-gray-50 transition-colors"
-                    >
-                      <item.icon size={14} className="text-[#4A5568]/50" />
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="border-t border-gray-100 p-1">
-                  <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-red-500 hover:bg-red-50 transition-colors">
-                    <LogOut size={14} className="text-red-400" />
-                    Sign out
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
         {/* Panel Toggle - hidden on mobile */}
         <button

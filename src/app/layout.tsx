@@ -71,7 +71,7 @@ export default function RootLayout({
 
   useEffect(() => {
     // Skip fetching sidebar on pages that have built-in sidebars (forecast, simulator)
-    if (currentPage === "forecast" || currentPage === "simulator") {
+    if (currentPage === "forecast" || currentPage === "simulator" || currentPage === "boardroom" || currentPage === "news") {
       setInsightLoading(false);
       return;
     }
@@ -115,7 +115,7 @@ export default function RootLayout({
         {/* Hidden on mobile (< lg) - use panel toggle only on desktop */}
         {/* Hidden on forecast and simulator pages — they have their own built-in sidebars */}
         <AnimatePresence initial={false}>
-          {panelOpen && currentPage !== "forecast" && currentPage !== "simulator" && (
+          {panelOpen && currentPage !== "forecast" && currentPage !== "simulator" && currentPage !== "boardroom" && currentPage !== "news" && (
             <motion.div
               key="impact-panel"
               initial={{ width: 0, opacity: 0 }}
@@ -140,7 +140,7 @@ export default function RootLayout({
 
         {/* Mobile sidebar overlay */}
         <AnimatePresence>
-          {panelOpen && currentPage !== "forecast" && currentPage !== "simulator" && (
+          {panelOpen && currentPage !== "forecast" && currentPage !== "simulator" && currentPage !== "boardroom" && currentPage !== "news" && (
             <motion.div
               key="mobile-sidebar-overlay"
               initial={{ opacity: 0 }}

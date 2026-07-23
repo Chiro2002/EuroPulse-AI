@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronDown, Clock, Sparkles } from "lucide-react";
+import { ChevronDown, Clock, Sparkles, Gavel } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { severityConfig, getTimeAgo, topicColors, getTopicLabel, calculateDBRelevance } from "@/lib/logic/newsClassifier";
 import { euCountries } from "@/lib/data/countries";
 import type { ClassifiedNews } from "@/lib/types";
@@ -17,6 +18,7 @@ interface ExpandedNewsCardProps {
 }
 
 export function ExpandedNewsCard({ item, index, onClick }: ExpandedNewsCardProps) {
+  const router = useRouter();
   const severityStyle = severityConfig[item.severity];
   const dbRelevance = calculateDBRelevance(item);
   const topicColor = topicColors[item.eventType] || "#94A3B8";
@@ -86,9 +88,24 @@ export function ExpandedNewsCard({ item, index, onClick }: ExpandedNewsCardProps
             </div>
           </div>
 
-          {/* Click hint */}
-          <div className="flex-shrink-0 mt-0.5 text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
-            <ChevronDown size={14} />
+          {/* Actions */}
+          <div className="flex-shrink-0 flex flex-col items-center gap-1.5 mt-0.5">
+            {/* Click hint */}
+            <div className="text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronDown size={14} />
+            </div>
+            {/* Debate button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/boardroom?topic=${encodeURIComponent(`Should DB act on: ${item.headline.slice(0, 80)}?`)}`);
+              }}
+              className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-700 text-[8px] font-medium hover:bg-amber-100 border border-amber-200 whitespace-nowrap"
+              title="Convene committee to debate this event"
+            >
+              <Gavel size={9} />
+              Debate
+            </button>
           </div>
         </div>
       </div>

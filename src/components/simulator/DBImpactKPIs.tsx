@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BarChart3, Euro, AlertTriangle, Sparkles, TrendingUp, TrendingDown } from "lucide-react";
+import { BarChart3, Euro, AlertTriangle, Sparkles, TrendingUp } from "lucide-react";
 
 interface KPIItem {
   icon: any;
@@ -11,7 +11,7 @@ interface KPIItem {
   value: string;
   valueColor: string;
   description: string;
-  impactLevel: "high" | "medium" | "low";
+  impactLevel: "high" | "medium";
   impactColor: string;
   impactLabel: string;
 }
@@ -21,21 +21,21 @@ const kpiData: KPIItem[] = [
     icon: BarChart3, iconBg: "bg-red-50", iconColor: "#E5484D",
     title: "Impact on DB Credit Risk",
     value: "+18 bps", valueColor: "#E5484D",
-    description: "Probability of Default increases across corporate loan portfolio",
+    description: "Probability of Default increases across corporate loan portfolio driven by energy sector exposure and GDP slowdown",
     impactLevel: "high", impactColor: "#E5484D", impactLabel: "High Impact",
   },
   {
     icon: Euro, iconBg: "bg-amber-50", iconColor: "#F5A623",
     title: "Impact on Net Interest Income",
     value: "-1.2%", valueColor: "#E5484D",
-    description: "NIM compression from rising funding costs and rate path",
+    description: "NIM compression from rising funding costs, rate path uncertainty, and deposit repricing lag",
     impactLevel: "medium", impactColor: "#F5A623", impactLabel: "Medium Impact",
   },
   {
     icon: AlertTriangle, iconBg: "bg-orange-50", iconColor: "#F97316",
     title: "Exposure at Risk",
     value: "€8.6B", valueColor: "#F97316",
-    description: "Total portfolio exposure vulnerable to adverse scenario",
+    description: "Total vulnerable portfolio exposure across corporate loans (€4.2B), sovereign bonds (€2.8B), and derivatives (€1.6B)",
     impactLevel: "high", impactColor: "#E5484D", impactLabel: "High Impact",
   },
 ];
@@ -57,7 +57,7 @@ export function DBImpactKPIs({ delay = 0 }: DBImpactKPIsProps) {
         </span>
       </div>
 
-      {/* KPI cards */}
+      {/* KPI stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {kpiData.map((kpi, i) => {
           const Icon = kpi.icon;
@@ -67,27 +67,25 @@ export function DBImpactKPIs({ delay = 0 }: DBImpactKPIsProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: delay + i * 0.1, duration: 0.4 }}
-              className="card p-4 overflow-hidden relative"
+              className="card p-4 overflow-hidden relative hover:shadow-md transition-shadow"
             >
               {/* Mini accent bar */}
               <div className="h-0.5 w-full rounded-full mb-3" style={{ backgroundColor: kpi.iconColor, opacity: 0.3 }} />
 
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: kpi.iconBg }}
-                  >
-                    <Icon size={14} style={{ color: kpi.iconColor }} />
-                  </div>
-                  <h3 className="text-[10px] font-semibold text-text-primary leading-tight max-w-[140px]">
-                    {kpi.title}
-                  </h3>
+              {/* Icon + Title row */}
+              <div className="flex items-start gap-3 mb-3">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: kpi.iconBg }}
+                >
+                  <Icon size={14} style={{ color: kpi.iconColor }} />
                 </div>
+                <h3 className="text-[10px] font-semibold text-text-primary leading-tight flex-1">
+                  {kpi.title}
+                </h3>
               </div>
 
-              {/* Value */}
+              {/* Large bold stat value */}
               <div className="flex items-baseline gap-1 mb-2">
                 <span
                   className="text-2xl font-extrabold tabular-nums tracking-tight"
@@ -95,13 +93,7 @@ export function DBImpactKPIs({ delay = 0 }: DBImpactKPIsProps) {
                 >
                   {kpi.value}
                 </span>
-                {kpi.title.includes("Credit Risk") ? (
-                  <TrendingUp size={14} className="text-[#E5484D]" />
-                ) : kpi.title.includes("Net Interest") ? (
-                  <TrendingDown size={14} className="text-[#E5484D]" />
-                ) : (
-                  <TrendingUp size={14} className="text-[#F97316]" />
-                )}
+                <TrendingUp size={14} className="flex-shrink-0" style={{ color: kpi.valueColor }} />
               </div>
 
               {/* Description */}
@@ -109,7 +101,7 @@ export function DBImpactKPIs({ delay = 0 }: DBImpactKPIsProps) {
                 {kpi.description}
               </p>
 
-              {/* Impact pill */}
+              {/* Impact-level pill */}
               <div
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-semibold"
                 style={{

@@ -6,7 +6,7 @@ import {
   Newspaper, Search, RefreshCw, Brain,
   SlidersHorizontal, SortAsc, Clock, Globe, X, Filter,
   AlertTriangle, Lightbulb, Users, TrendingUp, Building2,
-  ListChecks, Beaker,
+  ListChecks, Beaker, Gavel,
 } from "lucide-react";
 import { ExpandedNewsCard } from "@/components/news/ExpandedNewsCard";
 import { TopThemesPanel } from "@/components/news/TopThemesPanel";
@@ -693,14 +693,23 @@ export default function NewsPage() {
               </div>
 
               {/* ── Modal Footer ── */}
-              <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-gray-50/50">
-                <a
-                  href={`/simulator?scenario=${selectedEvent.eventType}&headline=${encodeURIComponent(selectedEvent.headline)}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-medium hover:bg-primary/20 transition-colors"
-                >
-                  <Beaker size={11} />
-                  Simulate this scenario
-                </a>
+              <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-t border-border bg-gray-50/50">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/simulator?scenario=${selectedEvent.eventType}&headline=${encodeURIComponent(selectedEvent.headline)}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-medium hover:bg-primary/20 transition-colors"
+                  >
+                    <Beaker size={11} />
+                    Simulate
+                  </a>
+                  <a
+                    href={`/boardroom?topic=${encodeURIComponent(`Should DB act on: ${selectedEvent.headline.slice(0, 80)}?`)}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-[10px] font-medium hover:bg-amber-100 transition-colors border border-amber-200"
+                  >
+                    <Gavel size={11} />
+                    Convene Committee
+                  </a>
+                </div>
                 <span className="text-[9px] text-text-secondary">Source: {selectedEvent.source}</span>
               </div>
             </motion.div>

@@ -1,7 +1,8 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Droplets, AlertTriangle, Percent, TrendingDown, Euro } from "lucide-react";
+import { Droplets, AlertTriangle, Percent, TrendingDown, Euro, Info } from "lucide-react";
 
 export type ShockType = "oil_spike" | "war_escalation" | "ecb_rate" | "eu_recession" | "currency_weakening";
 
@@ -21,19 +22,32 @@ const shockOptions: ShockConfig[] = [
   { id: "currency_weakening", icon: Euro, label: "Currency Weakening", iconBg: "bg-purple-50", iconColor: "#8B5CF6" },
 ];
 
+function computeSliderLeft(intensity: number): number {
+  const pct = ((intensity + 20) / 60) * 100;
+  return Math.max(5, Math.min(95, pct));
+}
+
 interface ShockSelectorProps {
   selected: ShockType;
   onSelect: (shock: ShockType) => void;
-  intensity: number; // -20 to +40
+  intensity: number;
   onIntensityChange: (value: number) => void;
-  intensityLabel: string; // e.g. "Oil +20%"
-  intensityCaption: string; // e.g. "Oil prices increase by 20% vs. baseline"
+  intensityLabel: string;
+  intensityCaption: string;
 }
 
 export function ShockSelector({
   selected, onSelect, intensity, onIntensityChange,
   intensityLabel, intensityCaption,
 }: ShockSelectorProps) {
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const [sliderLeft, setSliderLeft] = useState(() => computeSliderLeft(0));
+
+  // Sync floating label position to the intensity prop on mount and when it changes externally
+  useEffect(() => {
+    setSliderLeft(computeSliderLeft(intensity));
+  }, [intensity]);
+
   return (
     <div className="space-y-4">
       {/* Step label */}
@@ -42,8 +56,8 @@ export function ShockSelector({
         <h2 className="text-sm font-bold text-text-primary">Choose a Shock</h2>
       </div>
 
-      {/* Shock pills */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
+      {/* Shock pills — 5 in a row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
         {shockOptions.map((shock) => {
           const Icon = shock.icon;
           const isSelected = selected === shock.id;
@@ -68,7 +82,7 @@ export function ShockSelector({
                 >
                   <Icon size={16} style={{ color: shock.iconColor }} />
                 </div>
-                <span className={`text-[11px] font-semibold transition-colors ${
+                <span className={`text-[11px] font-semibold leading-tight transition-colors ${
                   isSelected ? "text-text-primary" : "text-text-secondary"
                 }`}>
                   {shock.label}
@@ -87,27 +101,33 @@ export function ShockSelector({
       </div>
 
       {/* Intensity slider */}
-      <div className="card p-4 bg-white/80">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+      <div className="card p-4 bg-white/80 relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-semibold text-text-secondary uppercase tracking-wider">
               Adjust Shock Intensity
             </span>
+            <Info size={11} className="text-text-muted" />
           </div>
-          <motion.div
-            key={intensity}
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20"
-          >
-            <span className="text-[11px] font-bold text-primary">{intensityLabel}</span>
-          </motion.div>
         </div>
 
-        {/* Slider */}
-        <div className="relative pt-4 pb-1">
+        {/* Slider area */}
+        <div className="relative pt-2 pb-1">
+          {/* Floating label above handle */}
+          <div className="relative h-6 mb-1">
+            <motion.div
+              key={intensity}
+              initial={{ scale: 0.9, opacity: 0.8 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="absolute -top-1 -translate-x-1/2 px-2.5 py-1 rounded-md bg-primary text-white text-[10px] font-bold shadow-sm whitespace-nowrap"
+              style={{ left: `${sliderLeft}%` }}
+            >
+              {intensityLabel}
+            </motion.div>
+          </div>
+
           {/* Tick marks */}
-          <div className="flex justify-between mb-2 px-0">
+          <div className="flex justify-between mb-1 px-0">
             {[-20, -10, 0, 10, 20, 30, 40].map((tick) => (
               <div key={tick} className="flex flex-col items-center">
                 <div className="w-px h-2 bg-gray-300" />
@@ -117,12 +137,17 @@ export function ShockSelector({
           </div>
 
           <input
+            ref={sliderRef}
             type="range"
             min={-20}
             max={40}
             step={1}
             value={intensity}
-            onChange={(e) => onIntensityChange(parseInt(e.target.value))}
+            onChange={(e) => {
+              const val = parseInt(e.target.value);
+              onIntensityChange(val);
+              setSliderLeft(computeSliderLeft(val));
+            }}
             className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-gray-200
               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md
@@ -133,7 +158,6 @@ export function ShockSelector({
             }}
           />
 
-          {/* Range labels */}
           <div className="flex justify-between text-[8px] text-text-secondary mt-1">
             <span>Mild</span>
             <span>Moderate</span>
@@ -141,7 +165,6 @@ export function ShockSelector({
           </div>
         </div>
 
-        {/* Caption */}
         <p className="text-[10px] text-text-secondary mt-2 leading-relaxed">
           Current selection: <strong className="text-primary">{intensityCaption}</strong>
         </p>

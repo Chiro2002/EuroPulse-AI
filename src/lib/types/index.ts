@@ -580,3 +580,45 @@ export interface SimulatorAPIResponse {
   narrative: string;
   actions: DBAction[];
 }
+
+// ==============================
+// AI Boardroom / Multi-Agent Debate Types
+// ==============================
+
+export interface DebateTurn {
+  agent: string;
+  message: string;
+  stance?: "support" | "oppose" | "neutral";
+  respondingTo?: string;
+  challenging?: string;
+}
+
+export interface DebateRound {
+  roundNumber: number;
+  roundLabel: string;
+  turns: DebateTurn[];
+}
+
+export interface DebateConclusion {
+  agent: "chair";
+  finalDecision: string;
+  confidenceScore: number;
+  votes: Record<string, "support" | "oppose" | "neutral">;
+  reasoningSummary: string;
+  dissentingView: string;
+}
+
+export interface BoardroomDebate {
+  topic: string;
+  rounds: DebateRound[];
+  conclusion: DebateConclusion;
+}
+
+export const AGENT_CONFIG: Record<string, { name: string; role: string; color: string; bgColor: string }> = {
+  cro: { name: "Sarah Chen", role: "Chief Risk Officer", color: "#DC2626", bgColor: "rgba(220,38,38,0.12)" },
+  trader: { name: "Marcus Webb", role: "Head of Trading", color: "#16A34A", bgColor: "rgba(22,163,74,0.12)" },
+  economist: { name: "Dr. Elena Vogt", role: "Chief Economist", color: "#2563EB", bgColor: "rgba(37,99,235,0.12)" },
+  compliance: { name: "James Okonkwo", role: "Compliance Officer", color: "#7C3AED", bgColor: "rgba(124,58,237,0.12)" },
+  devils_advocate: { name: "Alex Morozov", role: "Devil's Advocate", color: "#4B5563", bgColor: "rgba(75,85,99,0.12)" },
+  chair: { name: "Dr. Henri Dubois", role: "Committee Chair", color: "#0018A8", bgColor: "rgba(0,24,168,0.12)" },
+};
