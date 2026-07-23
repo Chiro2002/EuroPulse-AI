@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { DBImpactPanel } from "@/components/layout/DBImpactPanel";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { motion, AnimatePresence } from "framer-motion";
 import type { SidebarInsight } from "@/lib/types";
 import "./globals.css";
 
@@ -27,6 +26,7 @@ export default function RootLayout({
   const [sidebarInsight, setSidebarInsight] = useState<SidebarInsight | null>(null);
   const [insightLoading, setInsightLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState("dashboard");
+  const [panelOpen, setPanelOpen] = useState(true);
 
   // Track current page from URL
   useEffect(() => {
@@ -41,10 +41,8 @@ export default function RootLayout({
       setCurrentPage(path);
     };
 
-    // Use popstate for browser back/forward
     window.addEventListener("popstate", handleRouteChange);
 
-    // Override pushState to detect SPA navigation
     const originalPushState = history.pushState;
     history.pushState = function (...args) {
       originalPushState.apply(this, args);
@@ -72,8 +70,17 @@ export default function RootLayout({
   }, [currentPage]);
 
   useEffect(() => {
+    // Skip fetching sidebar on pages that have built-in sidebars (forecast, simulator)
+    if (currentPage === "forecast" || currentPage === "simulator") {
+      setInsightLoading(false);
+      return;
+    }
     fetchInsight();
-  }, [fetchInsight]);
+  }, [fetchInsight, currentPage]);
+
+  const togglePanel = () => {
+    setPanelOpen((prev) => !prev);
+  };
 
   return (
     <html
@@ -81,20 +88,22 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
       <head>
-        <title>EU Macro Intelligence — Deutsche Bank Risk Advisor</title>
+        <title>EuroPulse AI — EU Macro Intelligence Platform</title>
         <meta
           name="description"
-          content="AI-Powered Financial Risk Advisor for Deutsche Bank — EU Macro Intelligence Platform"
+          content="AI-Powered EU Macro Risk Intelligence Platform for Enterprise Banking"
         />
       </head>
-      <body className="flex h-screen overflow-hidden bg-db-navy">
-        {/* Left Sidebar */}
-        <Sidebar />
-
+      <body className="flex h-screen overflow-hidden bg-page">
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Top Bar */}
-          <TopBar alertCount={5} criticalAlertCount={2} />
+          {/* Top Navigation Bar */}
+          <TopBar
+            alertCount={5}
+            criticalAlertCount={2}
+            panelOpen={panelOpen}
+            onTogglePanel={togglePanel}
+          />
 
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto scrollbar-thin">
@@ -102,12 +111,29 @@ export default function RootLayout({
           </main>
         </div>
 
-        {/* Right Insight Panel */}
-        <DBImpactPanel
-          insight={sidebarInsight}
-          loading={insightLoading}
-          currentPage={currentPage}
-        />
+        {/* Right Sidebar Panel — 320px fixed width, slide in/out */}
+        {/* Hidden on forecast and simulator pages — they have their own built-in sidebars */}
+        <AnimatePresence initial={false}>
+          {panelOpen && currentPage !== "forecast" && currentPage !== "simulator" && (
+            <motion.div
+              key="impact-panel"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{
+                duration: 0.25,
+                ease: [0.25, 0.1, 0.25, 1],
+              }}
+              className="overflow-hidden flex-shrink-0 border-l border-gray-200/80"
+            >
+              <DBImpactPanel
+                insight={sidebarInsight}
+                loading={insightLoading}
+                currentPage={currentPage}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </body>
     </html>
   );

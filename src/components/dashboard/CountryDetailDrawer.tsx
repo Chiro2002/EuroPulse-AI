@@ -67,15 +67,15 @@ export function CountryDetailDrawer({ country, open, onClose }: CountryDetailDra
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-[420px] bg-db-navy-light border-l border-db-border shadow-2xl z-50 overflow-y-auto scrollbar-thin"
+            className="fixed right-0 top-0 h-full w-[420px] bg-white border-l border-border shadow-2xl z-50 overflow-y-auto"
           >
             {/* Header */}
-            <div className="sticky top-0 bg-db-navy-light border-b border-db-border p-4 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-white border-b border-border p-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{country.flag}</span>
                 <div>
-                  <h3 className="text-base font-bold text-db-text-primary">{country.countryName}</h3>
-                  <p className="text-xs text-db-text-muted">{country.country}</p>
+                  <h3 className="text-base font-bold text-text-primary">{country.countryName}</h3>
+                  <p className="text-xs text-text-secondary">{country.country}</p>
                 </div>
                 <div
                   className="ml-2 px-2 py-0.5 rounded text-xs font-bold"
@@ -86,16 +86,16 @@ export function CountryDetailDrawer({ country, open, onClose }: CountryDetailDra
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-db-surface transition-colors"
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <X size={18} className="text-db-text-muted" />
+                <X size={18} className="text-text-secondary" />
               </button>
             </div>
 
             <div className="p-4 space-y-4">
               {/* Risk Level */}
-              <div className="glass-card p-3 flex items-center justify-between">
-                <span className="text-sm text-db-text-secondary">Risk Level</span>
+              <div className="bg-white rounded-xl border border-border p-3 flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Risk Level</span>
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: level.color }} />
                   <span className="text-sm font-semibold" style={{ color: level.color }}>
@@ -105,8 +105,8 @@ export function CountryDetailDrawer({ country, open, onClose }: CountryDetailDra
               </div>
 
               {/* Radar Chart */}
-              <div className="glass-card p-3">
-                <h4 className="text-xs font-semibold text-db-text-secondary mb-2 uppercase tracking-wider">
+              <div className="bg-white rounded-xl border border-border p-3">
+                <h4 className="text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">
                   Risk Breakdown
                 </h4>
                 <ResponsiveContainer width="100%" height={260}>
@@ -142,9 +142,9 @@ export function CountryDetailDrawer({ country, open, onClose }: CountryDetailDra
               </div>
 
               {/* Top Concerns */}
-              <div className="glass-card p-3">
-                <h4 className="text-xs font-semibold text-db-text-secondary mb-2 uppercase tracking-wider flex items-center gap-1">
-                  <AlertTriangle size={11} className="text-db-warning" />
+              <div className="bg-white rounded-xl border border-border p-3">
+                <h4 className="text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider flex items-center gap-1">
+                  <AlertTriangle size={11} className="text-[#F5A623]" />
                   Top Risk Factors
                 </h4>
                 <div className="space-y-2">
@@ -152,8 +152,8 @@ export function CountryDetailDrawer({ country, open, onClose }: CountryDetailDra
                     const concernLevel = getRiskLevel(concern.score);
                     return (
                       <div key={i} className="flex items-center gap-3">
-                        <span className="text-xs text-db-text-muted w-20">{concern.factor}</span>
-                        <div className="flex-1 h-2 bg-db-border rounded-full overflow-hidden">
+                        <span className="text-xs text-text-secondary w-20">{concern.factor}</span>
+                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all"
                             style={{
@@ -173,19 +173,19 @@ export function CountryDetailDrawer({ country, open, onClose }: CountryDetailDra
 
               {/* DB Exposure */}
               {exposureData && (
-                <div className="glass-card p-3">
-                  <h4 className="text-xs font-semibold text-db-text-secondary mb-2 uppercase tracking-wider flex items-center gap-1">
-                    <Building2 size={11} className="text-db-accent" />
+              <div className="bg-white rounded-xl border border-border p-3">
+                <h4 className="text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider flex items-center gap-1">
+                  <Building2 size={11} className="text-primary" />
                     DB Exposure
                   </h4>
-                  <p className="text-lg font-bold text-db-text-primary mb-2">
+                  <p className="text-lg font-bold text-text-primary mb-2">
                     €{exposureData.total.toLocaleString()}M
                   </p>
                   <div className="space-y-1.5">
                     {Object.entries(exposureData.breakdown).map(([dept, amount]) => (
                       <div key={dept} className="flex items-center justify-between text-xs">
-                        <span className="text-db-text-muted">{dept}</span>
-                        <span className="text-db-text-primary font-medium">
+                        <span className="text-text-secondary">{dept}</span>
+                        <span className="text-text-primary font-medium">
                           €{amount.toLocaleString()}M
                         </span>
                       </div>
@@ -198,13 +198,13 @@ export function CountryDetailDrawer({ country, open, onClose }: CountryDetailDra
               <div className="flex gap-2">
                 <button
                   onClick={onClose}
-                  className="flex-1 py-2 rounded-lg bg-db-accent text-white text-xs font-medium hover:bg-blue-600 transition-colors"
+                  className="flex-1 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:brightness-110 transition-colors"
                 >
                   View on News Page →
                 </button>
                 <button
                   onClick={onClose}
-                  className="flex-1 py-2 rounded-lg bg-db-surface text-db-text-secondary text-xs font-medium hover:text-db-text-primary transition-colors"
+                  className="flex-1 py-2 rounded-lg bg-gray-100 text-text-secondary text-xs font-medium hover:text-text-primary transition-colors"
                 >
                   Close
                 </button>

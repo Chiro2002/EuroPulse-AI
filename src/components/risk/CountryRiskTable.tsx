@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Search, TrendingUp, TrendingDown, Minus, ArrowUpDown } from "lucide-react";
 import { getRiskLevel } from "@/lib/logic/riskCalculator";
-import type { CountryDetail, RiskDimension } from "@/lib/types";
+import type { CountryDetail } from "@/lib/types";
 
 interface CountryRiskTableProps {
   countries: CountryDetail[];
@@ -25,31 +25,29 @@ export function CountryRiskTable({ countries, selectedCountry, onCountrySelect }
       const q = searchQuery.toLowerCase();
       filtered = countries.filter((c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
     }
-
     return [...filtered].sort((a, b) => {
-      let aVal: any = a[sortKey as keyof CountryDetail];
-      let bVal: any = b[sortKey as keyof CountryDetail];
-      
-      // For breakdown dimensions, get the value from breakdown object
-      if (sortKey !== "code" && sortKey !== "totalRisk" && sortKey !== "trend30d") {
-        aVal = a.breakdown[sortKey as keyof typeof a.breakdown];
-        bVal = b.breakdown[sortKey as keyof typeof b.breakdown];
-      }
-
-      if (typeof aVal === "string") return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      return sortAsc ? (aVal || 0) - (bVal || 0) : (bVal || 0) - (aVal || 0);
+      const getVal = (item: CountryDetail, key: SortKey): number => {
+        if (key === "code") return 0;
+        if (key === "totalRisk") return item.totalRisk;
+        if (key === "trend30d") return item.trend30d;
+        return item.breakdown[key as keyof typeof item.breakdown] ?? 0;
+      };
+      const aVal = getVal(a, sortKey);
+      const bVal = getVal(b, sortKey);
+      if (sortKey === "code") return sortAsc ? a.code.localeCompare(b.code) : b.code.localeCompare(a.code);
+      return sortAsc ? aVal - bVal : bVal - aVal;
     });
   }, [countries, sortKey, sortAsc, searchQuery]);
 
-  const columns: { key: SortKey; label: string; width?: string }[] = [
-    { key: "code", label: "Country", width: "w-32" },
+  const columns: { key: SortKey; label: string }[] = [
+    { key: "code", label: "Country" },
     { key: "totalRisk", label: "Total" },
-    { key: "inflation", label: "Inflation" },
+    { key: "inflation", label: "Infl." },
     { key: "energy", label: "Energy" },
     { key: "debt", label: "Debt" },
-    { key: "employment", label: "Employment" },
+    { key: "employment", label: "Employ." },
     { key: "housing", label: "Housing" },
-    { key: "geopolitical", label: "Geopolitical" },
+    { key: "geopolitical", label: "Geo." },
     { key: "trend30d", label: "Trend" },
   ];
 
@@ -59,17 +57,16 @@ export function CountryRiskTable({ countries, selectedCountry, onCountrySelect }
   };
 
   return (
-    <div className="glass-card p-4">
-      {/* Search */}
+    <div className="card p-4">
       <div className="flex items-center gap-2 mb-3">
         <div className="flex-1 relative">
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-db-text-muted" />
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary" />
           <input
             type="text"
             placeholder="Search country..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-db-surface border border-db-border rounded-lg pl-7 pr-2 py-1.5 text-xs text-db-text-primary placeholder:text-db-text-muted focus:outline-none focus:border-db-accent transition-colors"
+            className="w-full bg-gray-50 border border-border rounded-lg pl-7 pr-2 py-1.5 text-xs text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary/40 transition-colors"
           />
         </div>
       </div>
@@ -82,19 +79,13 @@ export function CountryRiskTable({ countries, selectedCountry, onCountrySelect }
                 <th
                   key={col.key}
                   onClick={() => handleSort(col.key)}
-                  className={`text-left pb-2 pr-2 cursor-pointer hover:text-db-accent transition-colors ${
-                    col.width || ""
-                  } ${sortKey === col.key ? "text-db-accent" : "text-db-text-muted"}`}
+                  className={`text-left pb-2 pr-2 cursor-pointer hover:text-primary transition-colors ${
+                    sortKey === col.key ? "text-primary" : "text-text-secondary"
+                  }`}
                 >
                   <div className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-wider">
-                    {col.label === "Country" ? (
-                      <span>Country</span>
-                    ) : (
-                      <>
-                        {col.label}
-                        <ArrowUpDown size={9} />
-                      </>
-                    )}
+                    {col.label}
+                    {col.key !== "code" && <ArrowUpDown size={9} />}
                   </div>
                 </th>
               ))}
@@ -104,7 +95,6 @@ export function CountryRiskTable({ countries, selectedCountry, onCountrySelect }
             {sorted.map((country, i) => {
               const level = getRiskLevel(country.totalRisk);
               const isSelected = selectedCountry === country.code;
-
               return (
                 <motion.tr
                   key={country.code}
@@ -112,14 +102,14 @@ export function CountryRiskTable({ countries, selectedCountry, onCountrySelect }
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.02 }}
                   onClick={() => onCountrySelect(country.code)}
-                  className={`cursor-pointer transition-all ${
-                    isSelected ? "bg-db-accent/10" : "hover:bg-db-surface"
+                  className={`cursor-pointer transition-all rounded-lg ${
+                    isSelected ? "bg-primary/5" : "hover:bg-gray-50"
                   }`}
                 >
                   <td className="py-1.5 pr-2">
                     <div className="flex items-center gap-2">
                       <span className="text-base">{country.flag}</span>
-                      <span className="font-medium text-db-text-primary">{country.code}</span>
+                      <span className="font-medium text-text-primary text-[11px]">{country.code}</span>
                     </div>
                   </td>
                   <td className="py-1.5 pr-2">
@@ -134,10 +124,7 @@ export function CountryRiskTable({ countries, selectedCountry, onCountrySelect }
                     const dimLevel = getRiskLevel(country.breakdown[dim]);
                     return (
                       <td key={dim} className="py-1.5 pr-2">
-                        <span
-                          className="text-[10px] font-medium"
-                          style={{ color: dimLevel.color }}
-                        >
+                        <span className="text-[10px] font-medium" style={{ color: dimLevel.color }}>
                           {country.breakdown[dim]}
                         </span>
                       </td>
@@ -146,14 +133,14 @@ export function CountryRiskTable({ countries, selectedCountry, onCountrySelect }
                   <td className="py-1.5">
                     <div className="flex items-center gap-1">
                       {country.trend30d > 5 ? (
-                        <TrendingUp size={11} className="text-db-danger" />
+                        <TrendingUp size={11} className="text-[#E5484D]" />
                       ) : country.trend30d < -2 ? (
-                        <TrendingDown size={11} className="text-db-success" />
+                        <TrendingDown size={11} className="text-[#2FAE60]" />
                       ) : (
-                        <Minus size={11} className="text-db-text-muted" />
+                        <Minus size={11} className="text-text-secondary" />
                       )}
                       <span className={`text-[10px] font-medium ${
-                        country.trend30d > 5 ? "text-db-danger" : country.trend30d < -2 ? "text-db-success" : "text-db-text-muted"
+                        country.trend30d > 5 ? "text-[#E5484D]" : country.trend30d < -2 ? "text-[#2FAE60]" : "text-text-secondary"
                       }`}>
                         {country.trend30d > 0 ? "+" : ""}{country.trend30d}
                       </span>

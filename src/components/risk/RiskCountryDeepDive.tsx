@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer,
 } from "recharts";
-import {
-  TrendingUp, TrendingDown, Minus, Droplets, Zap, DollarSign, Users, Home, Globe, Brain,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Droplets, Zap, DollarSign, Users, Home, Globe } from "lucide-react";
 import { getRiskLevel } from "@/lib/logic/riskCalculator";
 import { dbExposureByCountry } from "@/lib/data/dbPortfolio";
 import type { CountryDetail } from "@/lib/types";
@@ -17,12 +15,8 @@ interface RiskCountryDeepDiveProps {
 }
 
 const factorIcons: Record<string, any> = {
-  inflation: Droplets,
-  energy: Zap,
-  debt: DollarSign,
-  employment: Users,
-  housing: Home,
-  geopolitical: Globe,
+  inflation: Droplets, energy: Zap, debt: DollarSign,
+  employment: Users, housing: Home, geopolitical: Globe,
 };
 
 const factorLabels: Record<string, string> = {
@@ -31,91 +25,135 @@ const factorLabels: Record<string, string> = {
 };
 
 export function RiskCountryDeepDive({ country }: RiskCountryDeepDiveProps) {
-  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const riskLevel = getRiskLevel(country.totalRisk);
 
-  // Generate previous-month data for comparison overlay
-  const prevMonth = Object.fromEntries(
-    Object.entries(country.breakdown).map(([key, val]) => [key, Math.max(5, val - 8 + Math.round(Math.random() * 16))])
-  );
+  const prevMonth = useMemo(() =>
+    Object.fromEntries(
+      Object.entries(country.breakdown).map(([key, val]) => [key, Math.max(5, val - 8 + Math.round(Math.random() * 16))])
+    ), [country.breakdown]);
 
-  const radarData = Object.entries(country.breakdown).map(([key, val]) => ({
-    factor: factorLabels[key] || key,
-    current: val,
-    previous: prevMonth[key],
-    fullMark: 100,
-  }));
-
-  useEffect(() => {
-    setAiExplanation(null);
-    setAiLoading(true);
-    // Simulate AI loading
-    const timer = setTimeout(() => {
-      const sorted = Object.entries(country.breakdown).sort(([, a], [, b]) => b - a);
-      const top = sorted[0];
-      const second = sorted[1];
-      setAiExplanation(
-        `${country.name} scores ${country.totalRisk}/100 (${riskLevel.label.toLowerCase()} risk). ` +
-        `The primary driver is ${factorLabels[top[0]] || top[0]} at ${top[1]}/100, ` +
-        `followed by ${factorLabels[second[0]] || second[0]} at ${second[1]}/100. ` +
-        `${country.code === "IT" ? "Italy's debt-to-GDP of 158% and structural low growth create persistent fiscal vulnerabilities requiring close monitoring of BTP spreads and ECB policy shifts." :
-          country.code === "PL" ? "Poland's proximity to the Ukraine conflict and high energy import dependency (75%) drive elevated geopolitical and energy stress scores." :
-          country.code === "ES" ? "Spain's elevated unemployment (10.8%) combined with high debt (120% of GDP) creates structural fiscal risks despite improving labor market trends." :
-          country.code === "DE" ? "Germany faces energy transition costs and industrial export headwinds, though strong fiscal position provides buffer compared to peers." :
-          "Watch for escalations in the top risk factors this quarter."}`
-      );
-      setAiLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [country.code, country.totalRisk, country.breakdown, riskLevel.label, country.name]);
+  const radarData = useMemo(() =>
+    Object.entries(country.breakdown).map(([key, val]) => ({
+      factor: factorLabels[key] || key, current: val, previous: prevMonth[key], fullMark: 100,
+    })), [country.breakdown, prevMonth]);
 
   const sortedBreakdown = Object.entries(country.breakdown)
     .sort(([, a], [, b]) => b - a)
     .map(([key, val]) => ({
-      key,
-      label: factorLabels[key] || key,
-      score: val,
-      level: getRiskLevel(val),
-      icon: factorIcons[key] || Globe,
+      key, label: factorLabels[key] || key, score: val,
+      level: getRiskLevel(val), icon: factorIcons[key] || Globe,
       detail: country.details[key as keyof typeof country.details],
     }));
 
+  const dbExposure = dbExposureByCountry[country.code];
+
+  // Top 3 exposure departments
+  const topExposureDepts = dbExposure
+    ? Object.entries(dbExposure.breakdown)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 3)
+    : [];
+
+  const exposureTotalFormatted = dbExposure
+    ? `€${(dbExposure.total / 1000).toFixed(1)}B`
+    : null;
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
+    <div className="space-y-3">
+      {/* Header Card — redesigned with integrated DB Exposure */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card p-4"
+        className="card overflow-hidden"
       >
-        <div className="flex items-center gap-4">
-          <span className="text-4xl">{country.flag}</span>
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-db-text-primary">{country.name}</h3>
-            <p className="text-xs text-db-text-muted">{country.code}</p>
-          </div>
-          <div className="text-center">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold"
-              style={{ backgroundColor: riskLevel.bgColor, color: riskLevel.color, boxShadow: `0 0 20px ${riskLevel.color}30` }}
-            >
-              {country.totalRisk}
+        {/* Top accent bar */}
+        <div className="h-1 w-full" style={{ backgroundColor: riskLevel.color }} />
+
+        <div className="p-4">
+          {/* Row 1: Country info + Risk Score + DB Exposure total */}
+          <div className="flex items-start gap-3">
+            {/* Flag */}
+            <span className="text-3xl leading-none mt-0.5">{country.flag}</span>
+
+            {/* Name + Code */}
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-bold text-text-primary truncate">{country.name}</h3>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[9px] font-mono font-medium text-text-secondary bg-gray-100 px-1.5 py-0.5 rounded">
+                  {country.code}
+                </span>
+                {/* Trend pills */}
+                <span className={`text-[9px] font-semibold flex items-center gap-0.5 px-1.5 py-0.5 rounded-full ${
+                  country.trend30d > 0 ? "bg-red-50 text-[#E5484D]" : country.trend30d < -2 ? "bg-green-50 text-[#2FAE60]" : "bg-gray-50 text-text-secondary"
+                }`}>
+                  {country.trend30d > 0 ? <TrendingUp size={8} /> : country.trend30d < -2 ? <TrendingDown size={8} /> : <Minus size={8} />}
+                  {country.trend30d > 0 ? "+" : ""}{country.trend30d}d
+                </span>
+                <span className={`text-[9px] font-semibold flex items-center gap-0.5 px-1.5 py-0.5 rounded-full ${
+                  country.trend90d > 0 ? "bg-red-50 text-[#E5484D]" : country.trend90d < -2 ? "bg-green-50 text-[#2FAE60]" : "bg-gray-50 text-text-secondary"
+                }`}>
+                  {country.trend90d > 0 ? <TrendingUp size={8} /> : country.trend90d < -2 ? <TrendingDown size={8} /> : <Minus size={8} />}
+                  {country.trend90d > 0 ? "+" : ""}{country.trend90d}d
+                </span>
+              </div>
             </div>
-            <span className="text-[10px] font-medium mt-1 block" style={{ color: riskLevel.color }}>
-              {riskLevel.label}
-            </span>
+
+            {/* Risk Score Circle */}
+            <div className="text-center flex-shrink-0">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shadow-sm"
+                style={{ backgroundColor: riskLevel.bgColor, color: riskLevel.color }}
+              >
+                {country.totalRisk}
+              </div>
+              <span className="text-[8px] font-semibold mt-0.5 block uppercase tracking-wider" style={{ color: riskLevel.color }}>
+                {riskLevel.label}
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3 mt-3 text-[10px] text-db-text-muted">
-          <span className="flex items-center gap-1">
-            30d trend: {country.trend30d > 0 ? <TrendingUp size={10} className="text-db-danger" /> : <TrendingDown size={10} className="text-db-success" />}
-            {country.trend30d > 0 ? "+" : ""}{country.trend30d}
-          </span>
-          <span className="flex items-center gap-1">
-            90d trend: {country.trend90d > 0 ? <TrendingUp size={10} className="text-db-danger" /> : <TrendingDown size={10} className="text-db-success" />}
-            {country.trend90d > 0 ? "+" : ""}{country.trend90d}
-          </span>
+
+          {/* Row 2: DB Exposure — full-width bar with total */}
+          {dbExposure && (
+            <>
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[9px] font-semibold text-text-secondary uppercase tracking-wider">
+                    DB Exposure
+                  </span>
+                  <span className="text-sm font-extrabold text-text-primary tabular-nums">
+                    {exposureTotalFormatted}
+                  </span>
+                </div>
+                {/* Exposure breakdown bars */}
+                <div className="space-y-1.5">
+                  {topExposureDepts.map(([dept, amount]) => {
+                    const pct = Math.round((amount / dbExposure.total) * 100);
+                    return (
+                      <div key={dept} className="flex items-center gap-2">
+                        <span className="text-[8px] text-text-secondary w-20 truncate flex-shrink-0">
+                          {dept}
+                        </span>
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${pct}%`, backgroundColor: riskLevel.color }}
+                          />
+                        </div>
+                        <span className="text-[9px] font-semibold text-text-primary tabular-nums w-14 text-right">
+                          €{(amount / 1000).toFixed(0)}B
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {Object.keys(dbExposure.breakdown).length > 3 && (
+                  <p className="text-[8px] text-text-secondary mt-1.5 text-right">
+                    +{Object.keys(dbExposure.breakdown).length - 3} more departments
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </motion.div>
 
@@ -123,23 +161,17 @@ export function RiskCountryDeepDive({ country }: RiskCountryDeepDiveProps) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card p-4"
+        transition={{ delay: 0.08 }}
+        className="card p-4"
       >
-        <h4 className="text-xs font-semibold text-db-text-secondary mb-3 uppercase tracking-wider">Risk Dimensions — Current vs 30 Days Ago</h4>
-        <ResponsiveContainer width="100%" height={280}>
+        <h4 className="text-[10px] font-semibold text-text-secondary mb-2 uppercase tracking-wider">Risk Dimensions</h4>
+        <ResponsiveContainer width="100%" height={240}>
           <RadarChart data={radarData}>
-            <PolarGrid stroke="#1E2756" />
-            <PolarAngleAxis dataKey="factor" tick={{ fill: "#94A3B8", fontSize: 10 }} />
-            <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#64748B", fontSize: 8 }} />
-            {/* Previous month overlay */}
-            <Radar name="30 days ago" dataKey="previous" stroke="#1E2756" fill="#1E2756" fillOpacity={0.1} strokeDasharray="3 3" />
-            {/* Current */}
+            <PolarGrid stroke="#E5E7EB" />
+            <PolarAngleAxis dataKey="factor" tick={{ fill: "#6B7280", fontSize: 9 }} />
+            <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#9CA3AF", fontSize: 7 }} />
+            <Radar name="30 days ago" dataKey="previous" stroke="#D1D5DB" fill="#D1D5DB" fillOpacity={0.1} strokeDasharray="3 3" />
             <Radar name="Current" dataKey="current" stroke={riskLevel.color} fill={riskLevel.color} fillOpacity={0.2} />
-            <Tooltip
-              contentStyle={{ background: "#111638", border: "1px solid #1E2756", borderRadius: "8px", fontSize: "12px" }}
-              labelStyle={{ color: "#F1F5F9" }}
-            />
           </RadarChart>
         </ResponsiveContainer>
       </motion.div>
@@ -148,53 +180,38 @@ export function RiskCountryDeepDive({ country }: RiskCountryDeepDiveProps) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-card p-4"
+        transition={{ delay: 0.15 }}
+        className="card p-4"
       >
-        <h4 className="text-xs font-semibold text-db-text-secondary mb-3 uppercase tracking-wider">Risk Breakdown</h4>
-        <div className="space-y-3">
+        <h4 className="text-[10px] font-semibold text-text-secondary mb-3 uppercase tracking-wider">Risk Breakdown</h4>
+        <div className="space-y-2">
           {sortedBreakdown.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.key} className="p-2.5 rounded-lg bg-db-surface/30 border border-db-border/30">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Icon size={12} style={{ color: item.level.color }} />
-                  <span className="text-xs font-medium text-db-text-primary flex-1">{item.label}</span>
-                  <span className="text-xs font-bold" style={{ color: item.level.color }}>{item.score}</span>
+              <div key={item.key} className="p-2.5 rounded-lg bg-gray-50/60 border border-gray-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon size={11} style={{ color: item.level.color }} />
+                  <span className="text-[11px] font-medium text-text-primary flex-1">{item.label}</span>
+                  <span className="text-[11px] font-bold" style={{ color: item.level.color }}>{item.score}</span>
                 </div>
-                <div className="h-1.5 bg-db-border rounded-full overflow-hidden mb-1.5">
+                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-1">
                   <div className="h-full rounded-full transition-all duration-500" style={{ width: `${item.score}%`, backgroundColor: item.level.color }} />
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-[9px] text-db-text-muted">
+                <div className="grid grid-cols-2 gap-1 text-[8px] text-text-secondary">
                   {item.key === "inflation" && item.detail && (
-                    <>
-                      <span>Current: {(item.detail as any).current}%</span>
-                      <span>Target gap: {Math.abs((item.detail as any).current - 2).toFixed(1)}pp</span>
-                    </>
+                    <><span>Rate: {(item.detail as any).current}%</span><span>Target gap: {Math.abs((item.detail as any).current - 2).toFixed(1)}pp</span></>
                   )}
                   {item.key === "energy" && item.detail && (
-                    <>
-                      <span>Import: {(item.detail as any).importPct}%</span>
-                      <span>Gas storage: {(item.detail as any).gasStorage}%</span>
-                    </>
+                    <><span>Import: {(item.detail as any).importPct}%</span><span>Storage: {(item.detail as any).gasStorage}%</span></>
                   )}
                   {item.key === "debt" && item.detail && (
-                    <>
-                      <span>Debt/GDP: {(item.detail as any).debtToGdp}%</span>
-                      <span>Deficit: {(item.detail as any).deficit?.toFixed(1)}%</span>
-                    </>
+                    <><span>Debt/GDP: {(item.detail as any).debtToGdp}%</span><span>Deficit: {(item.detail as any).deficit?.toFixed(1)}%</span></>
                   )}
                   {item.key === "employment" && item.detail && (
-                    <>
-                      <span>Unemployment: {(item.detail as any).unemployment}%</span>
-                      <span>6m change: {((item.detail as any).change6m > 0 ? "+" : "")}{(item.detail as any).change6m}pp</span>
-                    </>
+                    <><span>Unemp: {(item.detail as any).unemployment}%</span><span>6m: {((item.detail as any).change6m > 0 ? "+" : "")}{(item.detail as any).change6m}pp</span></>
                   )}
                   {item.key === "housing" && item.detail && (
-                    <>
-                      <span>Price/Income: {(item.detail as any).priceToIncome}x</span>
-                      <span>Stress: {(item.detail as any).mortgageStress}</span>
-                    </>
+                    <><span>Price/Inc: {(item.detail as any).priceToIncome}x</span><span>Stress: {(item.detail as any).mortgageStress}</span></>
                   )}
                   {item.key === "geopolitical" && item.detail && (
                     <span className="col-span-2">{(item.detail as any).factors?.slice(0, 2).join(", ")}</span>
@@ -204,41 +221,6 @@ export function RiskCountryDeepDive({ country }: RiskCountryDeepDiveProps) {
             );
           })}
         </div>
-      </motion.div>
-
-      {/* DB Exposure */}
-      {dbExposureByCountry[country.code] && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="glass-card p-3"
-        >
-          <h4 className="text-xs font-semibold text-db-text-secondary mb-2 uppercase tracking-wider">DB Exposure</h4>
-          <p className="text-lg font-bold text-db-text-primary">€{dbExposureByCountry[country.code].total.toLocaleString()}M</p>
-        </motion.div>
-      )}
-
-      {/* AI Insight */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="glass-card p-3 bg-gradient-to-r from-db-accent/5 to-transparent"
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <Brain size={14} className="text-db-warning" />
-          <span className="text-[10px] font-semibold text-db-text-secondary uppercase tracking-wider">AI Risk Analysis</span>
-        </div>
-        {aiLoading ? (
-          <div className="space-y-1 animate-pulse">
-            <div className="h-2 bg-db-border rounded w-full" />
-            <div className="h-2 bg-db-border rounded w-5/6" />
-            <div className="h-2 bg-db-border rounded w-4/6" />
-          </div>
-        ) : (
-          <p className="text-xs text-db-text-primary leading-relaxed">{aiExplanation}</p>
-        )}
       </motion.div>
     </div>
   );

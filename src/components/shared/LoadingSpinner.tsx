@@ -24,20 +24,20 @@ export function LoadingSpinner({ size = "md", text, fullPage = false }: LoadingS
       >
         {/* Outer ring */}
         <div
-          className={`absolute inset-0 rounded-full border-2 border-db-border`}
+          className={`absolute inset-0 rounded-full border-2 border-border`}
         />
         {/* Spinning arc */}
         <div
-          className={`absolute inset-0 rounded-full border-2 border-transparent border-t-db-accent`}
+          className={`absolute inset-0 rounded-full border-2 border-transparent border-t-primary`}
         />
         {/* Inner glow */}
-        <div className="absolute inset-2 rounded-full bg-db-accent/10 animate-pulse" />
+        <div className="absolute inset-2 rounded-full bg-primary/10 animate-pulse" />
       </motion.div>
       {text && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-sm text-db-text-muted"
+          className="text-sm text-text-secondary"
         >
           {text}
         </motion.p>

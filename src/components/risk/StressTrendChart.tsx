@@ -18,11 +18,6 @@ const countryColors: Record<string, string> = {
   PT: "#14B8A6", IE: "#6366F1",
 };
 
-const monthLabels: Record<string, string> = {
-  "2025-08-01": "Aug", "2025-09-01": "Sep", "2025-10-01": "Oct",
-  "2025-11-01": "Nov", "2025-12-01": "Dec", "2026-01-01": "Jan",
-};
-
 const eventHighlights = [
   { date: "2025-10-15", event: "ECB rate hike pause" },
   { date: "2025-12-15", event: "Italian budget concerns" },
@@ -30,16 +25,14 @@ const eventHighlights = [
 ];
 
 export function StressTrendChart({ historicalTrends, countries }: StressTrendChartProps) {
-  const [dimension, setDimension] = useState<"total" | "breakdown">("total");
   const top5 = countries.sort((a, b) => b.totalRisk - a.totalRisk).slice(0, 5);
 
-  // Build chart data by merging all country trends
   const allDates = [...new Set(
     Object.values(historicalTrends).flatMap((t) => t.map((d) => d.date))
   )].sort();
 
   const chartData = allDates.map((date) => {
-    const point: any = { date: monthLabels[date] || date };
+    const point: any = { date: new Date(date).toLocaleString("en", { month: "short" }) };
     top5.forEach((c) => {
       const trend = historicalTrends[c.code]?.find((t) => t.date === date);
       point[c.code] = trend?.riskScore ?? null;
@@ -49,26 +42,22 @@ export function StressTrendChart({ historicalTrends, countries }: StressTrendCha
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
-      // Find matching event for this date
       const matchingEvent = eventHighlights.find(e => {
         const eventMonth = new Date(e.date).toLocaleString("en", { month: "short" });
         return eventMonth === label;
       });
-
       return (
-        <div className="glass-card p-3 shadow-xl">
-          <p className="text-xs font-semibold text-db-text-primary mb-2">{label}</p>
+        <div className="card p-3 shadow-xl border border-border">
+          <p className="text-xs font-semibold text-text-primary mb-2">{label}</p>
           {payload.map((p: any) => (
             <div key={p.name} className="flex items-center gap-2 text-[10px] mb-1">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-              <span className="text-db-text-muted">{countries.find(c => c.code === p.name)?.name || p.name}:</span>
-              <span className="font-bold text-db-text-primary">{p.value}</span>
+              <span className="text-text-secondary">{countries.find(c => c.code === p.name)?.name || p.name}:</span>
+              <span className="font-bold text-text-primary">{p.value}</span>
             </div>
           ))}
           {matchingEvent && (
-            <p className="text-[9px] text-db-warning mt-1 pt-1 border-t border-db-border">
-              📌 {matchingEvent.event}
-            </p>
+            <p className="text-[9px] text-[#F5A623] mt-1 pt-1 border-t border-border">📌 {matchingEvent.event}</p>
           )}
         </div>
       );
@@ -77,32 +66,16 @@ export function StressTrendChart({ historicalTrends, countries }: StressTrendCha
   };
 
   return (
-    <div className="glass-card p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-db-text-primary">Risk Score Trend — Top 5 Countries</h3>
-        <div className="flex gap-1">
-          {["total", "breakdown"].map((d) => (
-            <button
-              key={d}
-              onClick={() => setDimension(d as any)}
-              className={`px-2 py-0.5 rounded text-[9px] font-medium transition-all ${
-                dimension === d ? "bg-db-accent text-white" : "bg-db-surface text-db-text-muted"
-              }`}
-            >
-              {d === "total" ? "Total Risk" : "By Dimension"}
-            </button>
-          ))}
-        </div>
-      </div>
-
+    <div className="card p-4">
+      <h3 className="text-sm font-bold text-text-primary mb-3">Risk Score Trend — Top 5 Countries</h3>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1E2756" />
-          <XAxis dataKey="date" tick={{ fill: "#94A3B8", fontSize: 10 }} />
-          <YAxis domain={[20, 90]} tick={{ fill: "#94A3B8", fontSize: 10 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <XAxis dataKey="date" tick={{ fill: "#6B7280", fontSize: 10 }} />
+          <YAxis domain={[20, 90]} tick={{ fill: "#6B7280", fontSize: 10 }} />
           <Tooltip content={<CustomTooltip />} />
           <Legend
-            wrapperStyle={{ fontSize: "10px", color: "#94A3B8" }}
+            wrapperStyle={{ fontSize: "10px", color: "#6B7280" }}
             formatter={(value: string) => countries.find(c => c.code === value)?.name || value}
           />
           {top5.map((c) => (
@@ -120,13 +93,12 @@ export function StressTrendChart({ historicalTrends, countries }: StressTrendCha
       </ResponsiveContainer>
 
       {/* Event highlights */}
-      <div className="flex items-center gap-3 mt-3 pt-2 border-t border-db-border">
-        <span className="text-[9px] text-db-text-muted font-medium">Key Events:</span>
+      <div className="flex items-center gap-3 mt-3 pt-2 border-t border-border">
+        <span className="text-[9px] text-text-secondary font-medium">Key Events:</span>
         {eventHighlights.map((ev, i) => (
-          <div key={i} className="flex items-center gap-1 text-[9px] text-db-text-muted">
-            <span className="w-1 h-1 rounded-full bg-db-warning" />
+          <div key={i} className="flex items-center gap-1 text-[9px] text-text-secondary">
+            <span className="w-1 h-1 rounded-full bg-[#F5A623]" />
             <span>{ev.event}</span>
-            <span className="text-db-text-muted/50">{ev.date.split("-").slice(1).join("/")}</span>
           </div>
         ))}
       </div>

@@ -5,6 +5,9 @@ import { generateForecastNarrative } from "@/lib/ai/agents";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const headers = {
+    "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+  };
   const searchParams = request.nextUrl.searchParams;
   const countriesParam = searchParams.get("countries") || "DE,FR,IT,ES,NL";
   const horizon = searchParams.get("horizon") || "quarterly";
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
       ...data,
       horizon,
       timestamp: new Date().toISOString(),
-    });
+    }, { headers });
   } catch (error) {
     console.error("Forecast API error:", error);
     return NextResponse.json(

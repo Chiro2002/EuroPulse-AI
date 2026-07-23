@@ -4,6 +4,9 @@ import { buildRiskData } from "@/lib/data/riskData";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const headers = {
+    "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+  };
   const searchParams = request.nextUrl.searchParams;
   const country = searchParams.get("country");
   const dimension = searchParams.get("dimension") || "total";
@@ -34,7 +37,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ...data,
       timestamp: new Date().toISOString(),
-    });
+    }, { headers });
   } catch (error) {
     console.error("Risk API error:", error);
     return NextResponse.json(

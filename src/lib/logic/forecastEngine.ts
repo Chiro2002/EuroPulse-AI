@@ -68,10 +68,10 @@ export function formatForecastValue(value: number, metric: string): string {
   }
 }
 
-export function getConfidenceConfig(confidence: number): { label: string; color: string; barColor: string } {
-  if (confidence >= 75) return { label: "High", color: "#10B981", barColor: "bg-db-success" };
-  if (confidence >= 55) return { label: "Medium", color: "#F59E0B", barColor: "bg-db-warning" };
-  return { label: "Low", color: "#EF4444", barColor: "bg-db-danger" };
+export function getConfidenceConfig(confidence: number): { label: string; color: string } {
+  if (confidence >= 75) return { label: "High", color: "#2FAE60" };
+  if (confidence >= 55) return { label: "Medium", color: "#F5A623" };
+  return { label: "Low", color: "#E5484D" };
 }
 
 export function groupForecastsByCountry(forecasts: Forecast[]): Record<string, Forecast[]> {

@@ -4,7 +4,7 @@
 
 @layer base {
   * {
-    @apply border-db-border;
+    @apply border-border;
   }
 
   html {
@@ -12,31 +12,102 @@
   }
 
   body {
-    @apply h-full bg-db-navy text-db-text-primary font-sans antialiased;
+    @apply h-full bg-page text-text-primary font-sans antialiased;
   }
 
   :root {
-    --sidebar-width: 240px;
-    --panel-width: 360px;
+    --panel-width: 320px;
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: rgba(0, 24, 168, 0.1);
+    color: #0018A8;
   }
 }
 
 @layer components {
-  .glass-card {
-    @apply bg-db-surface/80 backdrop-blur-sm border border-db-border/50 rounded-xl;
+  /* Card styles */
+  .card {
+    @apply bg-card border border-border rounded-card shadow-card transition-shadow duration-200;
   }
 
-  .glass-card-hover {
-    @apply glass-card transition-all duration-200 hover:bg-db-surface-light/80 hover:border-db-accent/30;
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:border-gray-200;
   }
 
-  .accent-glow {
-    @apply shadow-[0_0_15px_rgba(59,130,246,0.15)];
+  .card-elevated {
+    @apply card shadow-card-elevated;
   }
 
+  /* Deprecated: use card / card-hover classes instead */
+
+  /* AI glow card — subtle blue glow for AI content */
+  .card-ai {
+    @apply card border-primary/10 shadow-ai-glow;
+  }
+
+  /* Sidebar card */
+  .card-sidebar {
+    @apply bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-card shadow-sm;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase;
+  }
+
+  .badge-success {
+    @apply badge text-success bg-success/10;
+  }
+
+  .badge-warning {
+    @apply badge text-warning bg-warning/10;
+  }
+
+  .badge-danger {
+    @apply badge text-danger bg-danger/10;
+  }
+
+  .badge-ai {
+    @apply badge text-primary bg-primary/5 border border-primary/10;
+  }
+
+  /* Status dot */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot-green {
+    @apply status-dot bg-success;
+  }
+
+  .status-dot-amber {
+    @apply status-dot bg-warning;
+  }
+
+  .status-dot-red {
+    @apply status-dot bg-danger;
+  }
+
+  /* AI glow effect */
+  .ai-glow {
+    box-shadow: 0 0 20px rgba(0, 24, 168, 0.08);
+  }
+
+  .ai-glow-subtle {
+    box-shadow: 0 0 12px rgba(0, 24, 168, 0.05);
+  }
+
+  /* Divider */
+  .divider {
+    @apply w-full h-px bg-border;
+  }
+
+  /* Thin scrollbar (light theme) */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #1E2756 transparent;
+    scrollbar-color: #D1D5DB transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -48,13 +119,13 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #1E2756;
+    background-color: #D1D5DB;
     border-radius: 2px;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-db-accent to-blue-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
   }
 }

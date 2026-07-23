@@ -293,17 +293,17 @@ export function getRiskLevel(score: number): {
   if (score >= 75) {
     return {
       label: "Critical",
-      color: "#EF4444",
-      bgColor: "rgba(239, 68, 68, 0.15)",
-      textColor: "text-db-danger",
+      color: "#E5484D",
+      bgColor: "rgba(229, 72, 77, 0.15)",
+      textColor: "text-[#E5484D]",
     };
   }
   if (score >= 60) {
     return {
       label: "High",
-      color: "#F59E0B",
-      bgColor: "rgba(245, 158, 11, 0.15)",
-      textColor: "text-db-warning",
+      color: "#F5A623",
+      bgColor: "rgba(245, 162, 35, 0.15)",
+      textColor: "text-[#F5A623]",
     };
   }
   if (score >= 40) {
@@ -311,14 +311,14 @@ export function getRiskLevel(score: number): {
       label: "Moderate",
       color: "#3B82F6",
       bgColor: "rgba(59, 130, 246, 0.15)",
-      textColor: "text-db-accent",
+      textColor: "text-primary",
     };
   }
   return {
     label: "Low",
-    color: "#10B981",
-    bgColor: "rgba(16, 185, 129, 0.15)",
-    textColor: "text-db-success",
+    color: "#2FAE60",
+    bgColor: "rgba(47, 174, 96, 0.15)",
+    textColor: "text-[#2FAE60]",
   };
 }
 

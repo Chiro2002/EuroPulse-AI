@@ -21,9 +21,9 @@ const trendIcons: Record<string, LucideIcon> = {
 };
 
 const trendColors: Record<string, string> = {
-  up: "text-db-success",
-  down: "text-db-danger",
-  stable: "text-db-text-muted",
+  up: "text-[#2FAE60]",
+  down: "text-[#E5484D]",
+  stable: "text-text-secondary",
 };
 
 export function MetricCard({
@@ -42,18 +42,18 @@ export function MetricCard({
     <motion.div
       whileHover={onClick ? { scale: 1.02, y: -2 } : {}}
       onClick={onClick}
-      className={`glass-card-hover p-4 ${onClick ? "cursor-pointer" : ""}`}
+      className={`bg-white rounded-xl border border-border shadow-sm p-4 hover:shadow-md transition-shadow ${onClick ? "cursor-pointer hover:border-primary/30" : ""}`}
     >
       {loading ? (
         <div className="animate-pulse space-y-3">
-          <div className="h-3 bg-db-border rounded w-2/3" />
-          <div className="h-6 bg-db-border rounded w-1/2" />
-          <div className="h-2 bg-db-border rounded w-1/3" />
+          <div className="h-3 bg-gray-200/60 rounded w-2/3" />
+          <div className="h-6 bg-gray-200/60 rounded w-1/2" />
+          <div className="h-2 bg-gray-200/60 rounded w-1/3" />
         </div>
       ) : (
         <>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-db-text-secondary uppercase tracking-wider">
+            <span className="text-xs font-medium text-text-secondary uppercase tracking-wider">
               {title}
             </span>
             {Icon && (
@@ -64,7 +64,7 @@ export function MetricCard({
           </div>
 
           <div className="flex items-end gap-2">
-            <span className="text-2xl font-bold text-db-text-primary">
+            <span className="text-2xl font-bold text-text-primary">
               {value}
             </span>
             {TrendIcon && trend && (
@@ -78,7 +78,7 @@ export function MetricCard({
           </div>
 
           {subtitle && !trend && (
-            <p className="mt-1 text-xs text-db-text-muted">{subtitle}</p>
+            <p className="mt-1 text-xs text-text-secondary">{subtitle}</p>
           )}
         </>
       )}

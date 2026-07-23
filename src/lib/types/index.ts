@@ -92,7 +92,6 @@ export interface ImpactCard {
   severity: "low" | "medium" | "high" | "critical";
 }
 
-export type ViewMode = "simple" | "banker" | "detailed";
 
 export interface DashboardMetrics {
   overallRiskIndex: number;
@@ -176,6 +175,55 @@ export interface StressRadar {
   overall: number;
 }
 
+// ─── AI Executive Briefing Types ──────────────────────────────────────
+export interface BriefingIntelligence {
+  priority: number;
+  insight: string;
+  evidence: string;
+  implication: string;
+  confidence: number;
+  sourceCount: number;
+}
+
+export interface BriefingAlert {
+  portfolio: string;
+  alertType: "opportunity" | "risk" | "monitor";
+  message: string;
+  estimatedImpact: string;
+  recommendedAction: string;
+  urgency: "immediate" | "today" | "this_week";
+}
+
+export interface HistoricalParallel {
+  date: string;
+  event: string;
+  similarity: number;
+  outcome: string;
+  lesson: string;
+}
+
+export interface WatchItem {
+  item: string;
+  when: string;
+  why: string;
+}
+
+export interface ExecutiveBriefing {
+  briefingId: string;
+  criticalityLevel: "routine" | "elevated" | "urgent" | "crisis";
+  headline: string;
+  keyIntelligence: BriefingIntelligence[];
+  marketRegime: {
+    current: "risk_on" | "risk_off" | "uncertain" | "transitional";
+    changeFromYesterday: string;
+    keyDrivers: string[];
+  };
+  portfolioAlerts: BriefingAlert[];
+  historicalParallel: HistoricalParallel;
+  toWatch: WatchItem[];
+  confidenceStatement: string;
+}
+
 export interface DashboardData {
   topAlert: TopAlert;
   keyMetrics: KeyMetric[];
@@ -184,6 +232,14 @@ export interface DashboardData {
   marketPulse: MarketPulse;
   stressRadar: StressRadar;
   quickInsights: string[];
+  briefing: ExecutiveBriefing;
+  dataFreshness: {
+    ecbRate: string;
+    fx: string;
+    markets: string;
+    news: string;
+    sourcesQueried: number;
+  };
 }
 
 export type EventType = "geopolitical" | "economic_policy" | "energy" | "trade" | "financial_markets" | "war" | "regulatory";

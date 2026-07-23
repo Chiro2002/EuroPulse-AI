@@ -12,14 +12,9 @@ interface SectorHeatmapProps {
 }
 
 const sectorLabels: Record<string, string> = {
-  banking: "Banking",
-  energy: "Energy",
-  real_estate: "Real Estate",
-  manufacturing: "Manufacturing",
-  retail: "Retail",
-  tech: "Tech",
-  utilities: "Utilities",
-  transport: "Transport",
+  banking: "Banking", energy: "Energy", real_estate: "Real Estate",
+  manufacturing: "Manufacturing", retail: "Retail", tech: "Tech",
+  utilities: "Utilities", transport: "Transport",
 };
 
 export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
@@ -27,16 +22,16 @@ export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
   const sectors = Object.keys(sectorStress);
 
   return (
-    <div className="glass-card p-4 overflow-x-auto">
-      <h3 className="text-sm font-bold text-db-text-primary mb-3">Sector Stress Heatmap</h3>
+    <div className="card p-4 overflow-x-auto">
+      <h3 className="text-sm font-bold text-text-primary mb-3">Sector Stress Heatmap</h3>
       <table className="w-full text-xs">
         <thead>
           <tr>
-            <th className="text-left text-db-text-muted font-medium pb-2 pr-3 sticky left-0 bg-db-navy-light z-10">Sector</th>
+            <th className="text-left text-text-secondary font-medium pb-2 pr-3 sticky left-0 bg-white z-10">Sector</th>
             {countries.map((c) => (
-              <th key={c.code} className="text-center pb-2 px-2 min-w-[48px]" title={c.name}>
+              <th key={c.code} className="text-center pb-2 px-2 min-w-[44px]" title={c.name}>
                 <span className="text-base">{c.flag}</span>
-                <span className="block text-[8px] text-db-text-muted">{c.code}</span>
+                <span className="block text-[8px] text-text-secondary">{c.code}</span>
               </th>
             ))}
           </tr>
@@ -49,7 +44,7 @@ export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: si * 0.03 }}
             >
-              <td className="text-db-text-primary font-medium py-1.5 pr-3 sticky left-0 bg-db-navy-light z-10 whitespace-nowrap">
+              <td className="text-text-primary font-medium py-1.5 pr-3 sticky left-0 bg-white z-10 whitespace-nowrap text-[11px]">
                 {sectorLabels[sector] || sector}
               </td>
               {countries.map((country) => {
@@ -59,14 +54,11 @@ export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
                 const isSelected = selectedCell?.sector === sector && selectedCell?.country === country.code;
 
                 return (
-                  <td
-                    key={country.code}
-                    className="text-center p-0.5"
-                  >
+                  <td key={country.code} className="text-center p-0.5">
                     <button
                       onClick={() => setSelectedCell(isSelected ? null : { sector, country: country.code })}
                       className={`w-full py-1.5 px-1 rounded-md transition-all relative ${
-                        isSelected ? "ring-1 ring-db-accent" : ""
+                        isSelected ? "ring-1 ring-primary" : ""
                       }`}
                       style={{ backgroundColor: level.bgColor }}
                       title={`${sectorLabels[sector] || sector} - ${country.name}: ${score}/100`}
@@ -75,7 +67,7 @@ export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
                         {score}
                       </span>
                       {hasDBExposure && (
-                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-db-accent" title="DB has exposure" />
+                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" title="DB has exposure" />
                       )}
                     </button>
                   </td>
@@ -87,7 +79,7 @@ export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
       </table>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-3 pt-2 border-t border-db-border">
+      <div className="flex items-center gap-4 mt-3 pt-2 border-t border-border">
         <div className="flex items-center gap-1.5">
           {[1, 2, 3, 4, 5].map((i) => (
             <div
@@ -103,10 +95,10 @@ export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
             />
           ))}
         </div>
-        <span className="text-[9px] text-db-text-muted">Low → High Stress</span>
+        <span className="text-[9px] text-text-secondary">Low → High Stress</span>
         <div className="flex items-center gap-1 ml-auto">
-          <span className="w-1.5 h-1.5 rounded-full bg-db-accent" />
-          <span className="text-[9px] text-db-text-muted">DB Exposure</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          <span className="text-[9px] text-text-secondary">DB Exposure</span>
         </div>
       </div>
 
@@ -115,9 +107,9 @@ export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 p-3 rounded-lg bg-db-surface border border-db-border"
+          className="mt-3 p-3 rounded-lg bg-gray-50 border border-border"
         >
-          <p className="text-xs text-db-text-primary">
+          <p className="text-xs text-text-primary">
             <strong>{sectorLabels[selectedCell.sector] || selectedCell.sector}</strong> stress in{" "}
             <strong>{countries.find(c => c.code === selectedCell.country)?.name}</strong>:{" "}
             <span className="font-bold" style={{ color: getRiskLevel(sectorStress[selectedCell.sector]?.[selectedCell.country] ?? 50).color }}>
@@ -125,7 +117,7 @@ export function SectorHeatmap({ sectorStress, countries }: SectorHeatmapProps) {
             </span>
           </p>
           {dbExposureByCountry[selectedCell.country] && (
-            <p className="text-[10px] text-db-text-muted mt-1">
+            <p className="text-[10px] text-text-secondary mt-1">
               DB exposure: €{dbExposureByCountry[selectedCell.country].total.toLocaleString()}M
             </p>
           )}

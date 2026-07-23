@@ -5,7 +5,7 @@
  * to provide insights on different aspects of the platform.
  */
 
-import { generateStructuredResponse, isAIAvailable } from "./gemini";
+import { generateStructuredResponse, isAIAvailable } from "./provider";
 import {
   NewsItem,
   RiskScore,
@@ -46,62 +46,120 @@ const DEFAULT_SIDEBAR_INSIGHT: SidebarInsight = {
 };
 
 // ==============================
-// Agent: Sidebar Insight Generator
+// Agent: Sidebar Insight Generator (Uses Dashboard Live Data)
 // ==============================
 
 export async function generateSidebarInsight(
   currentPage: string,
   news: NewsItem[],
   riskScores: RiskScore[],
+  liveData: {
+    ecbRate: number;
+    eurUsd: number;
+    brentCurrent: number;
+    stoxxCurrent: number;
+    inflation: number;
+    stressRadar: { inflation: number; energy: number; fx: number; geopolitical: number; bond: number; housing: number; overall: number };
+    topEvents: { id: string; severity: number; headline: string }[];
+    countryRisks: { country: string; countryName: string; flag: string; riskScore: number }[];
+  },
   recentScenarios?: Scenario[]
 ): Promise<SidebarInsight> {
   if (!isAIAvailable()) {
-    return generateMockSidebarInsight(currentPage);
+    return generateMockSidebarInsight(currentPage, liveData);
   }
 
   const schema = {
     alertLevel: "string (green, yellow, orange, or red)",
-    topInsight: "string",
-    impactCards: "array of { department: string, impact: string, severity: string }",
-    actions: "array of strings",
-    earlyWarnings: "array of strings",
+    topInsight: "string — one paragraph assessing the most critical risk/opportunity for Deutsche Bank's portfolio right now",
+    impactCards: "array of { department: string, impact: string (with specific € amounts if possible), severity: string (critical|high|medium|low) }",
+    actions: "array of 2-3 concrete, quantified strings describing specific actions DB should take",
+    earlyWarnings: "array of 2-3 strings describing emerging risks that could materialize in 2-8 weeks",
   };
 
+  const dbPortfolioContext = `DB: €1.3T assets, €180B corp lending (DE/FR/IT), €95B mortgages (DE), €45B sovereign bonds (DE/FR/IT/ES), FX: EUR/USD`;
+
   const result = await generateStructuredResponse<SidebarInsight>(
-    `You are a senior risk analyst at Deutsche Bank. Analyze the current market data and provide concise, actionable insights for the ${currentPage} page. Focus on DB's portfolio exposure across EU countries. Be direct and quantitative.`,
-    `Current news: ${JSON.stringify(news.slice(0, 5))}\nRisk scores: ${JSON.stringify(riskScores)}`,
+    `Senior risk analyst, Deutsche Bank CRO. Generate sidebar insight for "${currentPage}".
+
+Data: ECB ${liveData.ecbRate}%, EUR/USD ${liveData.eurUsd}, Brent $${liveData.brentCurrent}, Stoxx ${Math.round(liveData.stoxxCurrent)}, HICP ${liveData.inflation}%
+${dbPortfolioContext}
+Stress: ${JSON.stringify(liveData.stressRadar)}
+Events: ${liveData.topEvents.slice(0, 3).map(e => `[${e.severity}] ${e.headline}`).join(" | ")}
+Countries: ${[...liveData.countryRisks].sort((a, b) => b.riskScore - a.riskScore).slice(0, 5).map(c => `${c.flag}${c.countryName}:${c.riskScore}`).join(", ")}
+
+Return JSON:
+- alertLevel: green/yellow/orange/red
+- topInsight: 1 paragraph on critical risk/opportunity for DB
+- impactCards: [{department, impact (with €), severity}]
+- actions: [2-3 concrete numbered actions with €]
+- earlyWarnings: [2 emerging risks in 2-8wks]`,
+    `News: ${JSON.stringify(news.slice(0, 3))}`,
     schema
   );
 
   return result ?? DEFAULT_SIDEBAR_INSIGHT;
 }
 
-function generateMockSidebarInsight(currentPage: string): SidebarInsight {
+function generateMockSidebarInsight(currentPage: string, liveData?: {
+  ecbRate: number;
+  eurUsd: number;
+  brentCurrent: number;
+  stoxxCurrent: number;
+  inflation: number;
+  stressRadar: { inflation: number; energy: number; fx: number; geopolitical: number; bond: number; housing: number; overall: number };
+  topEvents: { id: string; severity: number; headline: string }[];
+  countryRisks: { country: string; countryName: string; flag: string; riskScore: number }[];
+}): SidebarInsight {
+  // Use live data to generate realistic dynamic insights
+  const e = liveData ? {
+    ecbRate: liveData.ecbRate ?? 3.75,
+    eurUsd: liveData.eurUsd ?? 1.08,
+    brent: liveData.brentCurrent ?? 82,
+    stoxx: liveData.stoxxCurrent ?? 4892,
+    inflation: liveData.inflation ?? 2.8,
+    stress: liveData.stressRadar?.overall ?? 50,
+    topCountry: liveData.countryRisks ? [...liveData.countryRisks].sort((a, b) => b.riskScore - a.riskScore)[0] : null,
+  } : { ecbRate: 3.75, eurUsd: 1.08, brent: 82, stoxx: 4892, inflation: 2.8, stress: 50, topCountry: null };
+
+  const alertThresholds = () => {
+    if (e.stress > 65) return "red";
+    if (e.stress > 50) return "orange";
+    if (e.stress > 35) return "yellow";
+    return "green";
+  };
+
+  const topCountryName = e.topCountry?.countryName ?? "Italy";
+  const topCountryScore = e.topCountry?.riskScore ?? 74;
+  const topCountryFlag = e.topCountry?.flag ?? "🇮🇹";
+
+  const stressLevel = alertThresholds();
+
   const insightsByPage: Record<string, SidebarInsight> = {
     dashboard: {
-      alertLevel: "orange",
+      alertLevel: stressLevel as "green" | "yellow" | "orange" | "red",
       topInsight:
-        "Multiple risk factors converging: Italian debt stress, German industrial contraction, and energy supply disruption create heightened portfolio risk across DE, IT, and AT exposures.",
+        `ECB at ${e.ecbRate}% and EUR/USD at ${e.eurUsd} with Brent at $${e.brent} creating a complex risk landscape for DB. ${topCountryFlag} ${topCountryName} (${topCountryScore}/100) remains the highest-risk sovereign exposure. Inflation at ${e.inflation}% ${e.inflation > 2.5 ? "above target continues to pressure" : "near target provides room for"} ECB policy adjustment. Overall stress composite at ${e.stress}/100.`,
       impactCards: [
         {
           department: "Corporate Banking",
-          impact: "German manufacturing downturn (-1.2%) impacts €72B loan portfolio",
-          severity: "high",
+          impact: `Energy costs at $${e.brent}/bbl and inflation at ${e.inflation}% pressuring €72B corporate loan portfolio margins`,
+          severity: e.brent > 85 ? "critical" : "high",
         },
         {
           department: "Sovereign Trading",
-          impact: "Italian BTP spread widening to 185bps affects €28B bond holdings",
-          severity: "critical",
+          impact: `${topCountryFlag} ${topCountryName} risk at ${topCountryScore}/100 affects €28B+ sovereign bond holdings — spread widening risk elevated`,
+          severity: topCountryScore > 70 ? "critical" : "high",
         },
       ],
       actions: [
-        "Reduce Italian sovereign exposure by 10-15%",
-        "Increase German CRE loan loss provisions by 20%",
-        "Hedge Austrian energy exposure via futures",
+        `Hedge EUR/USD exposure at ${e.eurUsd} — increase forward coverage from 60% to 80%`,
+        `Review ${topCountryName} sovereign exposure limits — current risk score ${topCountryScore}/100`,
+        e.brent > 85 ? "Increase energy sector loan loss provisions by 15-20% for Q3" : "Monitor energy sector covenants for early stress signals",
       ],
       earlyWarnings: [
-        "French fiscal deterioration may trigger further downgrades",
-        "Polish zloty volatility could impact €8B trade finance portfolio",
+        `ECB rate at ${e.ecbRate}% — watch September meeting for pivot signals that could impact €45B bond portfolio`,
+        `Stoxx 50 at ${e.stoxx} reflecting ${e.stoxx < 4800 ? "recession pricing in cyclicals" : "cautious market sentiment"} — monitor wealth management AUM outflows`,
       ],
     },
     news: {
@@ -214,42 +272,178 @@ function generateMockSidebarInsight(currentPage: string): SidebarInsight {
 }
 
 // ==============================
-// Agent: Dashboard Insights Generator
+// Agent: Executive Briefing Agent
 // ==============================
 
-export async function generateDashboardInsights(data: {
-  topAlert: string;
-  stressRadar: any;
-  topEvents: string[];
-}): Promise<string[]> {
+import type { ExecutiveBriefing, BriefingIntelligence, BriefingAlert, HistoricalParallel, WatchItem } from "../types";
+
+export async function generateExecutiveBriefing(liveData: {
+  ecbRate: number;
+  eurUsd: number;
+  brentCurrent: number;
+  stoxxCurrent: number;
+  inflation: number;
+  inflationHistorical: { month: string; value: number }[];
+  gdeltNews: any[];
+}): Promise<ExecutiveBriefing> {
   if (!isAIAvailable()) {
-    return generateMockDashboardInsights(data);
+    return generateMockExecutiveBriefing(liveData);
   }
 
   const schema = {
-    insights: "array of 3 strings, each max 20 words",
+    briefingId: "string",
+    criticalityLevel: "string (routine|elevated|urgent|crisis)",
+    headline: "string",
+    keyIntelligence: "array of {priority: number, insight: string, evidence: string, implication: string, confidence: number, sourceCount: number}",
+    marketRegime: "{current: string (risk_on|risk_off|uncertain|transitional), changeFromYesterday: string, keyDrivers: string[]}",
+    portfolioAlerts: "array of {portfolio: string, alertType: string (opportunity|risk|monitor), message: string, estimatedImpact: string, recommendedAction: string, urgency: string (immediate|today|this_week)}",
+    historicalParallel: "{date: string, event: string, similarity: number, outcome: string, lesson: string}",
+    toWatch: "array of {item: string, when: string, why: string}",
+    confidenceStatement: "string",
   };
 
-  const result = await generateStructuredResponse<{ insights: string[] }>(
-    `You are a European macro analyst. Given today's data, provide 3 concise bullet insights (max 20 words each) about the most important themes today. Focus on: 1) Biggest risk 2) Most surprising development 3) What to watch tomorrow. Return as JSON.`,
-    JSON.stringify(data),
+  const result = await generateStructuredResponse<ExecutiveBriefing>(
+    `Chief Intelligence Officer, Deutsche Bank board. Today ${new Date().toISOString()}
+
+Data: ${JSON.stringify(liveData)}
+DB: €1.3T assets, €180B corp lending, €95B mortgages, €45B bonds
+
+Return exact schema. Cite specific numbers. Confidence reflects data quality.`,
+    "Generate executive briefing",
     schema
   );
 
-  return result?.insights ?? generateMockDashboardInsights(data);
+  return result ?? generateMockExecutiveBriefing(liveData);
 }
 
-function generateMockDashboardInsights(data: {
-  topAlert: string;
-  stressRadar: any;
-  topEvents: string[];
-}): string[] {
-  return [
-    "Italian sovereign debt stress (92/100) remains the single largest tail risk for EU financial stability this quarter.",
-    "German industrial production contraction (-1.2% MoM) signals recession risk spreading from manufacturing to services.",
-    "Watch ECB March meeting: markets pricing 25bps cut but sticky services inflation could force a hawkish hold.",
-  ];
+function generateMockExecutiveBriefing(liveData: {
+  ecbRate: number;
+  eurUsd: number;
+  brentCurrent: number;
+  stoxxCurrent: number;
+  inflation: number;
+  inflationHistorical: { month: string; value: number }[];
+  gdeltNews: any[];
+}): ExecutiveBriefing {
+  const inflationTrend = liveData.inflationHistorical?.slice(-3) ?? [];
+  const inflationDown = inflationTrend.length >= 2 && inflationTrend[inflationTrend.length - 1].value < inflationTrend[0].value;
+
+  return {
+    briefingId: `BRIEF-${new Date().toISOString().split("T")[0]}`,
+    criticalityLevel: liveData.inflation > 3 ? "elevated" : "routine",
+    headline: `ECB at ${liveData.ecbRate}%, EUR/USD at ${liveData.eurUsd}: ${
+      inflationDown ? "Disinflation trend intact but energy risks loom" : "Sticky inflation complicates ECB easing path"
+    }`,
+    keyIntelligence: [
+      {
+        priority: 1,
+        insight: `ECB rate at ${liveData.ecbRate}% — market pricing 25bps cut by September but services inflation stickiness may delay easing`,
+        evidence: `ECB deposit facility rate at ${liveData.ecbRate}%. Core inflation running above target. Market-implied probability of Sep cut: 62%.`,
+        implication: "Net interest margin compression of 12-18bps expected if cuts materialize, impacting €45B bond portfolio",
+        confidence: 78,
+        sourceCount: 4,
+      },
+      {
+        priority: 2,
+        insight: `EUR/USD at ${liveData.eurUsd} — dollar strength persisting on US economic outperformance`,
+        evidence: `EUR/USD at ${liveData.eurUsd}, down from 1.12 peak. ECB-ECB policy divergence driving flows.`,
+        implication: "FX translation risk for €83B USD-denominated assets. Each 5-cent move impacts P&L by approximately €12M.",
+        confidence: 72,
+        sourceCount: 3,
+      },
+      {
+        priority: 3,
+        insight: `Brent crude at $${Math.round(liveData.brentCurrent)} — energy prices remain elevated, pressuring manufacturing margins`,
+        evidence: `Brent at $${Math.round(liveData.brentCurrent)}. European gas storage at 72% capacity. Energy-intensive industrial production contracting.`,
+        implication: "Energy-exposed corporate loan portfolio (€45B in DE, AT, PL) faces margin compression of 8-15% over next quarter.",
+        confidence: 82,
+        sourceCount: 5,
+      },
+      {
+        priority: 4,
+        insight: `Euro Stoxx 50 at ${Math.round(liveData.stoxxCurrent)} — equity markets pricing recession risk in cyclicals`,
+        evidence: `Stoxx 50 at ${Math.round(liveData.stoxxCurrent)}. Financials underperforming, defensive sectors leading. Volatility index elevated.`,
+        implication: "Wealth management AUM may see 3-5% quarterly decline. Trading revenues could benefit from increased volatility.",
+        confidence: 65,
+        sourceCount: 3,
+      },
+      {
+        priority: 5,
+        insight: liveData.inflation > 2.5
+          ? `EU HICP inflation at ${liveData.inflation}% — above target but moderating, ECB remains data-dependent`
+          : `EU inflation at ${liveData.inflation}% — approaching target, supports gradual easing narrative`,
+        evidence: `Latest HICP print: ${liveData.inflation}%. Services inflation sticky at 4.0%. Goods inflation easing.`,
+        implication: inflationDown
+          ? "Disinflation supports gradual ECB easing, positive for bond portfolio but negative for deposit margins."
+          : "Sticky inflation may delay cuts beyond September, supporting net interest income but increasing duration risk.",
+        confidence: 75,
+        sourceCount: 6,
+      },
+    ],
+    marketRegime: {
+      current: liveData.inflation > 3 ? "risk_off" : "uncertain",
+      changeFromYesterday: "Risk-off sentiment prevailing on energy price concerns and ECB uncertainty",
+      keyDrivers: [
+        `ECB rate path: ${liveData.ecbRate}% — watch Lagarde's September guidance`,
+        `EUR/USD: ${liveData.eurUsd} — USD strength driven by rate differential`,
+        `Energy: Brent at $${Math.round(liveData.brentCurrent)} — supply disruption risk from Middle East`,
+      ],
+    },
+    portfolioAlerts: [
+      {
+        portfolio: "corporate_lending",
+        alertType: "risk",
+        message: `German manufacturing PMI contraction threatens €72B corporate loan book — monitor covenant headroom`,
+        estimatedImpact: "€120-180M potential provisioning if contraction persists 2+ quarters",
+        recommendedAction: "Increase sector concentration limits review to monthly",
+        urgency: "this_week",
+      },
+      {
+        portfolio: "trading",
+        alertType: "opportunity",
+        message: `Expected ECB easing cycle creates duration trade opportunity in EU government bonds`,
+        estimatedImpact: "€25-40M potential P&L from tactical long duration position",
+        recommendedAction: "Extend portfolio duration by 0.5 years ahead of ECB pivot",
+        urgency: "this_week",
+      },
+      {
+        portfolio: "mortgage",
+        alertType: "monitor",
+        message: `EUR/USD weakness at ${liveData.eurUsd} impacts €18B US-denominated corporate loan translations`,
+        estimatedImpact: "€45-80M FX translation impact if EUR/USD reaches 1.04",
+        recommendedAction: "Increase hedge ratio on USD assets from 65% to 80%",
+        urgency: "today",
+      },
+    ],
+    historicalParallel: {
+      date: "September 2023",
+      event: "ECB final 25bp hike to 4.0%, then 9-month pause before cuts",
+      similarity: 74,
+      outcome: "Banks that extended duration in Nov '23 captured 180bps of additional yield. Late hedgers lost 40bps on EUR/USD.",
+      lesson: "Act early on duration extension — the window between last hike and first cut averages 7 months. Positioning 30 days before pivot adds 2.3x return.",
+    },
+    toWatch: [
+      {
+        item: "ECB September meeting minutes — look for dove/hawk balance",
+        when: new Date(Date.now() + 7 * 86400000).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+        why: "Will signal pace of future easing cycle — critical for bond positioning",
+      },
+      {
+        item: "German ZEW economic sentiment index",
+        when: new Date(Date.now() + 3 * 86400000).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+        why: "Leading indicator for EU growth — below 15 would confirm recession risk",
+      },
+      {
+        item: "EU energy ministers emergency meeting",
+        when: new Date(Date.now() + 5 * 86400000).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+        why: "Possible gas price cap extension — impacts inflation and ECB path",
+      },
+    ],
+    confidenceStatement: "High confidence in ECB rate and energy price assessments (direct market data). Moderate confidence on recession timing (leading indicators mixed). Low confidence on geopolitical escalation risk (inherently unpredictable). Use 70-30 weighting: 70% data-driven analysis, 30% scenario-based judgment.",
+  };
 }
+
+
 
 // ==============================
 // Agent: News Impact Analyzer
@@ -275,7 +469,7 @@ export async function analyzeNewsImpact(newsItem: NewsItem): Promise<{
   };
 
   return generateStructuredResponse(
-    "You are a Deutsche Bank risk analyst. Assess how this news item affects DB's portfolio and suggest actions.",
+    "Deutsche Bank risk analyst. Assess news impact on DB portfolio. Return JSON with: dbRelevanceScore (0-100), affectedDBDepartments, suggestedActions.",
     JSON.stringify(newsItem),
     schema
   );
@@ -293,7 +487,7 @@ export async function generateDailyNewsSummary(news: any[]): Promise<string> {
   const schema = { summary: "string" };
 
   const result = await generateStructuredResponse<{ summary: string }>(
-    `You are a European macro news analyst. Summarize today's key European macro developments in exactly 3 sentences. Focus on: (1) most important event, (2) key theme, (3) what to watch. Written for a bank executive.`,
+    `European macro analyst. Summarize key EU developments in 3 sentences: (1) top event (2) key theme (3) what to watch. For bank executive.`,
     JSON.stringify(news.slice(0, 5)),
     schema
   );
@@ -324,7 +518,7 @@ export async function explainCountryRisk(countryData: {
 
   const schema = { explanation: "string" };
   const result = await generateStructuredResponse<{ explanation: string }>(
-    `You are analyzing risk for ${countryData.name} which has a risk score of ${countryData.totalRisk}/100. Breakdown: ${JSON.stringify(countryData.breakdown)}. In 3-4 sentences, explain why this country is at this risk level. Identify the top 2 drivers. Written for a bank risk officer. Be specific and factual.`,
+    `Risk analyst. ${countryData.name} risk score ${countryData.totalRisk}/100. Breakdown: ${JSON.stringify(countryData.breakdown)}. Explain in 3-4 sentences. Top 2 drivers. For bank risk officer.`,
     JSON.stringify(countryData.details),
     schema
   );
@@ -359,7 +553,7 @@ export async function generateForecastNarrative(forecastData: any): Promise<stri
   const schema = { narrative: "string" };
 
   const result = await generateStructuredResponse<{ narrative: string }>(
-    `You are a senior European macro strategist. Based on these forecasts, write a 2-3 paragraph narrative covering: the overall macro trajectory Europe is heading toward, key inflection points and dates to watch, main risks to the base case, and what could change the outlook. Written for bank executives. Confident but acknowledges uncertainty. 200 words max.`,
+    `Senior EU macro strategist. Based on forecasts, write 2-3 paragraph narrative: macro trajectory, inflection points/dates, risks to base case, what could change outlook. 200 words max. For bank execs.`,
     JSON.stringify(forecastData),
     schema
   );
@@ -387,24 +581,15 @@ export async function generateScenarioNarrative(simulationResult: any): Promise<
   const schema = { narrative: "string" };
 
   const result = await generateStructuredResponse<{ narrative: string }>(
-    `You are analyzing a scenario simulation for Deutsche Bank.
+    `Scenario analysis for Deutsche Bank CRO.
+Scenario: ${simulationResult.scenario}, Intensity ${simulationResult.intensity}x, ${simulationResult.timeHorizon}
 
-Scenario: ${simulationResult.scenario}
-Intensity: ${simulationResult.intensity}x
-Time horizon: ${simulationResult.timeHorizon}
+Market: ${JSON.stringify(simulationResult.changes?.slice(0, 5))}
+Top countries: ${Object.entries(simulationResult.countryImpacts || {}).sort(([, a]: any, [, b]: any) => b.change - a.change).slice(0, 3).map(([c]) => c).join(", ")}
+DB impacts: ${JSON.stringify(simulationResult.dbImpact)}
+Total P&L: €${simulationResult.totalDBPnL}M
 
-Results:
-- Market impacts: ${JSON.stringify(simulationResult.changes?.slice(0, 5))}
-- Most affected countries: ${Object.entries(simulationResult.countryImpacts || {}).sort(([, a]: any, [, b]: any) => b.change - a.change).slice(0, 3).map(([c]) => c).join(", ")}
-- DB business line impacts: ${JSON.stringify(simulationResult.dbImpact)}
-- Total DB P&L impact: €${simulationResult.totalDBPnL}M
-
-Write a 3-paragraph executive analysis:
-Paragraph 1: What would happen — describe the sequence of events chronologically
-Paragraph 2: Which entities suffer most — countries, sectors, and why
-Paragraph 3: Deutsche Bank specific impact — which business lines, magnitude, and time horizon
-
-Written for the Chief Risk Officer. Confident, specific, actionable. 250 words.`,
+3-paragraph exec analysis: (1) sequence of events (2) hardest-hit countries/sectors/why (3) DB impact by business line. 250 words.`,
     JSON.stringify(simulationResult),
     schema
   );
@@ -438,21 +623,9 @@ export async function generateDBActions(simulationResult: any): Promise<{ catego
   };
 
   const result = await generateStructuredResponse<{ actions: any[] }>(
-    `Given this scenario simulation showing DB impact:
-${JSON.stringify(simulationResult.dbImpact)}
-Total P&L impact: €${simulationResult.totalDBPnL}M
+    `DB scenario impact: ${JSON.stringify(simulationResult.dbImpact)}. Total P&L: €${simulationResult.totalDBPnL}M.
 
-Generate 6-8 concrete actions for Deutsche Bank, categorized as:
-- IMMEDIATE (must do today): 2-3 actions
-- SHORT-TERM (this week): 2-3 actions
-- MONITORING (ongoing): 2 actions
-
-Each action must specify:
-- Department responsible (Risk / Treasury / Trading / Corporate / Retail / Compliance)
-- Specific action (concrete, measurable)
-- Why (1 sentence)
-
-Return as structured JSON array.`,
+Generate 6-8 concrete DB actions: 2-3 IMMEDIATE (today), 2-3 SHORT_TERM (week), 2 MONITORING. Per action: department (Risk/Treasury/Trading/Corporate/Retail/Compliance), specific action, why (1 sentence). Return JSON array.`,
     JSON.stringify(simulationResult),
     schema
   );
@@ -499,7 +672,7 @@ export async function analyzeScenarioImpact(
   };
 
   return generateStructuredResponse(
-    "You are a Deutsche Bank risk analyst. Analyze this scenario and provide expected loss estimates and recommended actions.",
+    "Deutsche Bank risk analyst. Analyze this scenario. Provide expected loss estimates and recommended actions. Return JSON.",
     JSON.stringify(scenario),
     schema
   );

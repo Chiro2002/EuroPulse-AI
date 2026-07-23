@@ -12,19 +12,19 @@ interface TopThemesPanelProps {
 
 export function TopThemesPanel({ themes, selectedTopic, onTopicSelect }: TopThemesPanelProps) {
   return (
-    <div className="glass-card p-4">
-      <h3 className="text-xs font-bold text-db-text-primary mb-3 flex items-center gap-1.5 uppercase tracking-wider">
-        <Hash size={12} className="text-db-accent" />
+    <div className="card p-4">
+      <h3 className="text-xs font-bold text-text-primary mb-3 flex items-center gap-1.5 uppercase tracking-wider">
+        <Hash size={12} className="text-primary" />
         Top Themes
       </h3>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <button
           onClick={() => onTopicSelect("all")}
           className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs transition-all ${
             selectedTopic === "all"
-              ? "bg-db-accent text-white"
-              : "text-db-text-muted hover:text-db-text-primary hover:bg-db-surface"
+              ? "bg-primary text-white shadow-sm"
+              : "text-text-secondary hover:text-text-primary hover:bg-gray-50"
           }`}
         >
           <span className="flex-1 text-left font-medium">All Topics</span>
@@ -40,19 +40,16 @@ export function TopThemesPanel({ themes, selectedTopic, onTopicSelect }: TopThem
             onClick={() => onTopicSelect(theme.rawKey)}
             className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs transition-all ${
               selectedTopic === theme.rawKey
-                ? "bg-db-surface ring-1 ring-db-accent/30"
-                : "hover:bg-db-surface"
+                ? "bg-gray-50 ring-1 ring-primary/20"
+                : "hover:bg-gray-50"
             }`}
           >
-            <div
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: theme.color }}
-            />
-            <span className="flex-1 text-left text-db-text-primary font-medium">{theme.name}</span>
-            <span className="text-[10px] text-db-text-muted">{theme.count}</span>
-            {theme.trend === "up" && <TrendingUp size={10} className="text-db-danger" />}
-            {theme.trend === "down" && <TrendingDown size={10} className="text-db-success" />}
-            {theme.trend === "stable" && <Minus size={10} className="text-db-text-muted" />}
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: theme.color }} />
+            <span className="flex-1 text-left text-text-primary font-medium">{theme.name}</span>
+            <span className="text-[10px] text-text-secondary">{theme.count}</span>
+            {theme.trend === "up" && <TrendingUp size={10} className="text-[#E5484D]" />}
+            {theme.trend === "down" && <TrendingDown size={10} className="text-[#2FAE60]" />}
+            {theme.trend === "stable" && <Minus size={10} className="text-text-secondary" />}
           </motion.button>
         ))}
       </div>
