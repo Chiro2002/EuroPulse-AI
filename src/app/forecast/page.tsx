@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp, RefreshCw, Info, Brain, Sparkles, ChevronDown, ChevronUp,
-  AlertTriangle, Lightbulb, Target, ShieldCheck, CheckCircle2,
+  AlertTriangle, Lightbulb, Target,
 } from "lucide-react";
 import {
   Skeleton, SkeletonLine, SkeletonForecastCard, SkeletonKPIInsight,
@@ -128,14 +128,7 @@ export default function ForecastPage() {
     }
   }, [data, forecastMode]);
 
-  const modeActions = useMemo(() => {
-    if (!sidebarData) return [
-      "Monitor ECB March meeting for rate path guidance",
-      "Review energy sector loan book exposure concentrations",
-      "Prepare risk committee briefing on Italian spread dynamics",
-    ];
-    return sidebarData.actions.slice(0, 2);
-  }, [sidebarData]);
+
 
   // ── Loading State ────────────────────────────────────────────────────
   if (loading) {
@@ -377,31 +370,7 @@ export default function ForecastPage() {
                   </p>
                 </motion.div>
 
-                {/* Recommended Action */}
-                <motion.div
-                  key={`action-${forecastMode}`}
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className="rounded-xl bg-white border border-green-100 p-3 shadow-sm"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-4 h-4 rounded-md bg-green-50 flex items-center justify-center">
-                      <ShieldCheck size={9} className="text-green-600" />
-                    </div>
-                    <span className="text-[9px] font-semibold text-green-700 uppercase tracking-wider">
-                      Recommended Action
-                    </span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {modeActions.map((action, i) => (
-                      <div key={i} className="flex items-start gap-1.5">
-                        <CheckCircle2 size={10} className="text-green-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-[10px] text-text-primary leading-snug">{action}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
+
               </div>
             </motion.div>
           </div>
@@ -424,9 +393,9 @@ export default function ForecastPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="card p-6 shadow-2xl">
+            <div className="card p-6 shadow-2xl w-full max-w-md">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
                   <Info size={14} className="text-primary" /> Methodology

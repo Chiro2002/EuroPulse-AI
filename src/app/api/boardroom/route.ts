@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateStructuredResponse, getActiveProvider } from "@/lib/ai/provider";
 import type { BoardroomDebate, DebateRound, DebateConclusion } from "@/lib/types";
 
+// Boardroom generation needs more tokens for the full 3-round transcript
+// and higher temperature for creative dialogue variety
+const BOARDROOM_OPTIONS = {
+  maxTokens: 8192,
+  temperature: 0.85,
+};
+
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 // Fisher-Yates shuffle
 function shuffle<T>(array: T[]): T[] {
@@ -187,7 +194,8 @@ Remember: ground every argument in the specific topic. Reference realistic figur
     let result = await generateStructuredResponse<BoardroomDebate>(
       systemPrompt,
       userPrompt,
-      schema
+      schema,
+      BOARDROOM_OPTIONS
     );
 
     // Retry once if parsing failed
@@ -196,7 +204,8 @@ Remember: ground every argument in the specific topic. Reference realistic figur
       result = await generateStructuredResponse<BoardroomDebate>(
         systemPrompt + "\n\nCRITICAL: You MUST return valid JSON. Validate your output before sending.",
         retryPrompt,
-        schema
+        schema,
+        { ...BOARDROOM_OPTIONS, temperature: 0.7 } // Slightly lower temp on retry for more reliable JSON
       );
     }
 

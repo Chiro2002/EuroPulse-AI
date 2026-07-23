@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const countriesParam = searchParams.get("countries") || "DE,FR,IT,ES,NL";
   const horizon = searchParams.get("horizon") || "quarterly";
-  const includeNarrative = searchParams.get("narrative") === "true";
+  const includeNarrative = searchParams.get("narrative") !== "false"; // Always-on by default
 
   try {
     const countries = countriesParam.split(",").map((c: string) => c.trim().toUpperCase());
